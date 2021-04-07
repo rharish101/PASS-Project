@@ -8,4 +8,5 @@ contract Contract {
   function foo(int x) public {
     y = x;  // y becomes trusted after seeing the guard
     require(msg.sender == owner);  // guard
+  }
 }

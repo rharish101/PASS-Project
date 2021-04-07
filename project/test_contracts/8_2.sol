@@ -10,4 +10,5 @@ contract Contract {
     if(msg.sender == owner) {  // guard
       // ...
     }
+  }
 }

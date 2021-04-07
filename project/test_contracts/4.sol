@@ -3,9 +3,9 @@ pragma solidity ^0.5.0;
 // the contract is vulnerable
 // the output of your analyzer should be Tainted
 contract Contract {
-  address owner;
-  address x;
-  function foo1(address y) public {
+  address payable owner;
+  address payable x;
+  function foo1(address payable y) public {
     x = y;
   }
   function foo2() public {

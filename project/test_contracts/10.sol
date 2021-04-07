@@ -6,7 +6,7 @@ contract Contract {
   address payable owner;
   function foo(int x) public {
     if(x < 5) {                  // not guard
-      if(msg.sender == owner)    // guard
+      if(msg.sender == owner) {  // guard
         // ...
       } else {                   // guard
         // ...
