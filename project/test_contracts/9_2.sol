@@ -5,7 +5,7 @@ pragma solidity ^0.5.0;
 contract Contract {
   address payable owner;
   function foo() public {
-    if(msg.sender == owner)     // guard
+    if(msg.sender == owner) {   // guard
       // ...
     } else {                    // guard
       // ...
