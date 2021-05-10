@@ -125,6 +125,47 @@ msgValue(id) :- builtinVariable(id, "VALUE").
 .decl tainted_sinks(id: SSA)
 
 // Your code goes here...
-tainted_sinks(id) :- selfdestruct(id,_).
+
+.decl boolOp(op: Name)
+.decl compOp(op: Name)
+.decl condTaint(id: SSA)
+.decl tainted(id: SSA)
+.decl guard(id: SSA)
+.decl badBlock(id_block: Block)
+
+boolOp("!").
+boolOp("||").
+boolOp("&&").
+
+compOp("==").
+compOp("!=").
+
+condTaint(id) :- argument(id, block, _), function(block, __).
+condTaint(id) :- msgSender(id).
+condTaint(id) :- msgValue(id).
+condTaint(id) :- assign(id, id_var), condTaint(id_var).
+condTaint(id) :- uop(id, id_var, _), condTaint(id_var).
+// XXX: Exclude comparisons so that guard's aren't tainted
+condTaint(id) :- bop(id, id_lhs, _, op), !compOp(op), condTaint(id_lhs).
+condTaint(id) :- bop(id, _, id_rhs, op), !compOp(op), condTaint(id_rhs).
+
+tainted(id) :- condTaint(id), blockStmt(block, id), badBlock(block).
+
+// XXX: Hacky
+guard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), msgSender(id_lhs), !condTaint(id_rhs).
+guard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), !condTaint(id_lhs), msgSender(id_rhs).
+guard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), msgSender(id_lhs), msgSender(id_rhs).
+
+// XXX: Hacky
+guard(id) :- uop(id, id_var, op), boolOp(op), guard(id_var).
+guard(id) :- bop(id, id_lhs, id_rhs, op), boolOp(op), guard(id_lhs), !condTaint(id_rhs).
+guard(id) :- bop(id, id_lhs, id_rhs, op), boolOp(op), !condTaint(id_lhs), guard(id_rhs).
+
+badBlock(block) :- function(block, _).
+badBlock(block_to) :- goto(_, block_from, block_to), badBlock(block_from).
+badBlock(block_true) :- branch(_, __, block_from, block_true, ___, cond_id), !guard(cond_id), badBlock(block_from).
+badBlock(block_false) :- branch(_, __, block_from, ___, block_false, cond_id), !guard(cond_id), badBlock(block_from).
+
+tainted_sinks(id) :- selfdestruct(id, address), tainted(address).
 
 .output tainted_sinks
