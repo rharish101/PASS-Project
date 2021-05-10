@@ -2,3 +2,6 @@
 __pycache__/
 .mypy_cache/
 *.egg-info/
+
+# Analyzer outputs
+project/test_contracts/*_out/
