@@ -138,6 +138,9 @@ condTaint(id) :- assign(id, id_var), condTaint(id_var).
 condTaint(id) :- uop(id, id_var, _), condTaint(id_var).
 condTaint(id) :- bop(id, id_lhs, _, _), condTaint(id_lhs).
 condTaint(id) :- bop(id, _, id_rhs, _), condTaint(id_rhs).
+condTaint(id) :- transferArgument(id_transfer, id_src, idx), condTaint(id_src), argument(id, id_block, idx), goto(id_transfer, _, id_block).
+condTaint(id) :- transferArgument(id_transfer, id_src, idx), condTaint(id_src), argument(id, id_block, idx), branch(id_transfer, _, __, id_block, ___, ____).
+condTaint(id) :- transferArgument(id_transfer, id_src, idx), condTaint(id_src), argument(id, id_block, idx), branch(_, id_transfer, __, ___, id_block, ____).
 
 tainted(id) :- condTaint(id), blockStmt(block, id), badBlock(block).
 
