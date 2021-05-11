@@ -126,47 +126,62 @@ msgValue(id) :- builtinVariable(id, "VALUE").
 
 // Your code goes here...
 
-.decl condTaint(id: SSA)
-.decl tainted(id: SSA)
-.decl guard(id: SSA)
-.decl badBlock(id_block: Block)
+.decl boolOp(op: Name)
+.decl compOp(op: Name)
+.decl argTaint(id_block: Block)
+.decl tainted(id: SSA, id_block: Block)
+.decl notGuard(id: SSA)
 
-// For untrusted inputs
-condTaint(id) :- argument(id, block, _), function(block, __).
-condTaint(id) :- msgSender(id).
-condTaint(id) :- msgValue(id).
+// Used in notGuard
+boolOp("!").
+boolOp("||").
+boolOp("&&").
+
+// Used in notGuard
+compOp("<").
+compOp("<=").
+compOp(">").
+compOp(">=").
+compOp("==").
+compOp("!=").
+
+// Virtual taint for tainting untrusted inputs, msg.sender, and msg.value
+argTaint(blk) :- function(blk, _).
+argTaint(blk) :- goto(_, blk_src, blk), argTaint(blk_src).
+argTaint(blk) :- branch(_, __, blk_src, blk, ___, id_cond), notGuard(id_cond), argTaint(blk_src).
+argTaint(blk) :- branch(_, __, blk_src, ___, blk, id_cond), notGuard(id_cond), argTaint(blk_src).
+
+// For untrusted inputs, msg.sender, and msg.value
+tainted(id, blk) :- argument(id, blk_fn, _), function(blk_fn, __), argTaint(blk).
+tainted(id, blk) :- msgSender(id), argTaint(blk).
+tainted(id, blk) :- msgValue(id), argTaint(blk).
 
 // For expressions
-condTaint(id) :- assign(id, id_var), condTaint(id_var).
-condTaint(id) :- uop(id, id_var, _), condTaint(id_var).
-condTaint(id) :- bop(id, id_lhs, _, _), condTaint(id_lhs).
-condTaint(id) :- bop(id, _, id_rhs, _), condTaint(id_rhs).
+tainted(id, blk) :- assign(id, id_var), tainted(id_var, blk).
+tainted(id, blk) :- uop(id, id_var, _), tainted(id_var, blk).
+tainted(id, blk) :- bop(id, id_lhs, _, _), tainted(id_lhs, blk).
+tainted(id, blk) :- bop(id, _, id_rhs, _), tainted(id_rhs, blk).
 
 // For argument combinations
-condTaint(id) :- transferArgument(id_transfer, id_src, idx), condTaint(id_src), argument(id, id_block, idx), goto(id_transfer, _, id_block).
-condTaint(id) :- transferArgument(id_transfer, id_src, idx), condTaint(id_src), argument(id, id_block, idx), branch(id_transfer, _, __, id_block, ___, ____).
-condTaint(id) :- transferArgument(id_transfer, id_src, idx), condTaint(id_src), argument(id, id_block, idx), branch(_, id_transfer, __, ___, id_block, ____).
-
-tainted(id) :- condTaint(id), blockStmt(block, id), badBlock(block).
+tainted(id, blk) :- transferArgument(id_transfer, id_src, idx), tainted(id_src, blk_src), argument(id, blk, idx), goto(id_transfer, blk_src, blk).
+tainted(id, blk) :- transferArgument(id_transfer, id_src, idx), tainted(id_src, blk_src), argument(id, blk, idx), branch(id_transfer, _, blk_src, blk, __, ___).
+tainted(id, blk) :- transferArgument(id_transfer, id_src, idx), tainted(id_src, blk_src), argument(id, blk, idx), branch(_, id_transfer, blk_src, __, blk, ___).
 
 // Base guard definition
-guard(id) :- bop(id, id_lhs, id_rhs, _), msgSender(id_lhs), !condTaint(id_rhs).
-guard(id) :- bop(id, id_lhs, id_rhs, _), !condTaint(id_lhs), msgSender(id_rhs).
-guard(id) :- bop(id, id_lhs, id_rhs, _), msgSender(id_lhs), msgSender(id_rhs).
+notGuard(id) :- const(id, "True").
+notGuard(id) :- const(id, "False").
+notGuard(id) :- assign(id, _).
+notGuard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), msgSender(id_lhs), tainted(id_rhs, blk), !msgSender(id_rhs), blockStmt(blk, id).
+notGuard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), tainted(id_lhs, blk), !msgSender(id_lhs), msgSender(id_rhs), blockStmt(blk, id).
+notGuard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), !msgSender(id_lhs), !msgSender(id_rhs).
 
 // Combination of guards within a require/if-else
-guard(id) :- uop(id, id_var, _), guard(id_var).
-guard(id) :- bop(id, id_lhs, id_rhs, _), guard(id_lhs), !condTaint(id_rhs).
-guard(id) :- bop(id, id_lhs, id_rhs, _), !condTaint(id_lhs), guard(id_rhs).
-guard(id) :- bop(id, id_lhs, id_rhs, _), guard(id_lhs), guard(id_rhs).
-
-// Blocks showing taints for function args, msg.sender, msg.value, etc.
-badBlock(block) :- function(block, _).
-badBlock(block_to) :- goto(_, block_from, block_to), badBlock(block_from).
-badBlock(block_true) :- branch(_, __, block_from, block_true, ___, cond_id), !guard(cond_id), badBlock(block_from).
-badBlock(block_false) :- branch(_, __, block_from, ___, block_false, cond_id), !guard(cond_id), badBlock(block_from).
+notGuard(id) :- uop(id, id_var, op), boolOp(op), notGuard(id_var).
+notGuard(id) :- bop(id, id_lhs, _, op), boolOp(op), notGuard(id_lhs), tainted(id_lhs, blk), blockStmt(blk, id).
+notGuard(id) :- bop(id, _, id_rhs, op), boolOp(op), notGuard(id_rhs), tainted(id_rhs, blk), blockStmt(blk, id).
+notGuard(id) :- bop(id, id_lhs, id_rhs, op), boolOp(op), notGuard(id_lhs), notGuard(id_rhs).
 
 // Final output
-tainted_sinks(id) :- selfdestruct(id, address), tainted(address).
+tainted_sinks(id) :- selfdestruct(id, addr), tainted(addr, blk), blockStmt(blk, id).
 
-.output tainted_sinks
+.output tainted_sinks, notGuard, tainted
