@@ -23,6 +23,8 @@ TESTS=(
     '10,Tainted'
     '10_1,Tainted'
     '10_2,Safe'
+    '10_3,Safe'
+    '10_4,Tainted'
     '11,Safe'
     '12,Safe'
     '12_1,Tainted'
