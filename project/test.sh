@@ -32,6 +32,7 @@ TESTS=(
     '13,Safe'
     '14,Safe'
     '15,Safe'
+    '16,Safe'
 )
 
 declare -a to_run
