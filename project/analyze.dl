@@ -184,4 +184,4 @@ notGuard(id) :- bop(id, id_lhs, id_rhs, op), boolOp(op), notGuard(id_lhs), notGu
 // Final output
 tainted_sinks(id) :- selfdestruct(id, addr), tainted(addr, blk), blockStmt(blk, id).
 
-.output tainted_sinks, notGuard, tainted
+.output tainted_sinks
