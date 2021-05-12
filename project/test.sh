@@ -30,6 +30,7 @@ TESTS=(
     '12_1,Tainted'
     '13,Safe'
     '14,Safe'
+    '15,Safe'
 )
 
 declare -a to_run
