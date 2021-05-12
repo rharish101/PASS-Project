@@ -19,10 +19,10 @@ TESTS=(
     '8_1,Safe'
     '8_2,Safe'
     '8_3,Safe'
-    # '8_4,Tainted'
+    '8_4,Tainted'
     '8_5,Safe'
-    # '8_6,Tainted'
-    # '8_7,Tainted'
+    '8_6,Tainted'
+    '8_7,Tainted'
     '9_1,Safe'
     '9_1,Safe'
     '10,Tainted'
@@ -38,7 +38,7 @@ TESTS=(
     '15,Safe'
     '16,Safe'
     '17,Safe'
-    # '18,Tainted'
+    '18,Tainted'
 )
 
 declare -a to_run
