@@ -14,4 +14,13 @@ notLastStmt(id, blk) :- blockStmt(blk, id),
                         follows(id_src, id).
 notEmptyBlock(blk) :- blockStmt(blk, _).
 
+// Used for getting taints across function returns
+blockFollows(blk, blk) :- block(blk).
+blockFollows(blk_next, blk_prev) :- goto(_, blk_prev, blk_next).
+blockFollows(blk_next, blk_prev) :- branch(_, __, blk_prev, blk_next, ___, ____).
+blockFollows(blk_next, blk_prev) :- branch(_, __, blk_prev, ___, blk_next, ____).
+blockFollows(blk_next, blk_prev) :- jump(_, blk_prev, __, blk_next).
+blockFollows(blk_next, blk_prev) :- blockFollows(blk_mid, blk_prev),
+                                    blockFollows(blk_next, blk_mid).
+
 #endif
