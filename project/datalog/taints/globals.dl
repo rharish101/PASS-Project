@@ -1,0 +1,54 @@
+#ifndef GLOBAL_TAINTS
+#define GLOBAL_TAINTS
+
+#include "../declarations.dl"
+
+
+// taintedGlobal rules for block start/end
+taintedGlobal(field, id, src) :- taintedGlobalBlkStart(field, blk, src),
+                                 firstStmt(id, blk).
+taintedGlobalBlkEnd(field, blk, src) :- taintedGlobal(field, id, src),
+                                        lastStmt(id, blk).
+taintedGlobalBlkEnd(field, blk, src) :- taintedGlobalBlkStart(field, blk, src),
+                                        !notEmptyBlock(blk).
+
+// Apply taintedGlobal when storing
+taintedGlobal(field, id, src) :- store(id, field, id_var),
+                                 taintedLocal(id_var, blk, src),
+                                 blockStmt(blk, id).
+
+// Apply perma-taint when loading perma-tainted globals
+taintedGlobal(field, id, "perm") :- permaTainted(field),
+                                    firstStmt(id, blk),
+                                    function(blk, _).
+
+// Pass taintedGlobal b/w statements
+taintedGlobal(field, id, src) :- taintedGlobal(field, id_src, src),
+                                 follows(id, id_src),
+                                 !store(id, field, _).
+
+// Pass taintedGlobal for each id for transfers
+taintedGlobalBlkStart(field, blk, "perm") :- goto(_, blk_src, blk),
+                                             taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "perm") :- branch(_, __, blk_src, blk, ___, ____),
+                                             taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "perm") :- branch(_, __, blk_src, ___, blk, ____),
+                                             taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "cond") :- goto(_, blk_src, blk),
+                                             taintedGlobalBlkEnd(field, blk_src, "cond"),
+                                             argTaint(blk).
+taintedGlobalBlkStart(field, blk, "cond") :- branch(_, __, blk_src, blk, ___, ____),
+                                             taintedGlobalBlkEnd(field, blk_src, "cond"),
+                                             argTaint(blk).
+taintedGlobalBlkStart(field, blk, "cond") :- branch(_, __, blk_src, ___, blk, ____),
+                                             taintedGlobalBlkEnd(field, blk_src, "cond"),
+                                             argTaint(blk).
+
+// Save perma-taints when returning
+permaTainted(field) :- return(_, blk),
+                       taintedGlobalBlkEnd(field, blk, "perm").
+permaTainted(field) :- return(_, blk),
+                       taintedGlobalBlkEnd(field, blk, "cond"),
+                       argTaint(blk).
+
+#endif

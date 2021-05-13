@@ -1,0 +1,19 @@
+#ifndef OP_DEFS
+#define OP_DEFS
+
+#include "declarations.dl"
+
+// Boolean ops - used in notGuard
+boolOp("!").
+boolOp("||").
+boolOp("&&").
+
+// Ops that give booleans - used in notGuard
+compOp("<").
+compOp("<=").
+compOp(">").
+compOp(">=").
+compOp("==").
+compOp("!=").
+
+#endif
