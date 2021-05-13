@@ -8,11 +8,11 @@ By default runs on all contracts.
 EOF
 
 TESTS=(
-    # '0,Tainted'
+    '0,Tainted'
     '1,Tainted'
     '2,Safe'
     '3,Safe'
-    # '4,Tainted'
+    '4,Tainted'
     '5,Safe'
     '6,Tainted'
     # '7,Tainted'
