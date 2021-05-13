@@ -6,7 +6,7 @@
 // Calculate depth
 depth(nil, 0).
 depth([id_transfer, tail], num + 1) :- depth(tail, num),
-                                       num > 0,
+                                       num < 3,
                                        jump(id_transfer, _, __, ___).
 
 #endif
