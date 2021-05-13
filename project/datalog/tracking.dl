@@ -1,0 +1,17 @@
+#ifndef TRACKING
+#define TRACKING
+
+#include "declarations.dl"
+
+// Used for passing around taintedGlobal
+firstStmt(id, blk) :- blockStmt(blk, id), !notFirstStmt(id, blk).
+lastStmt(id, blk) :- blockStmt(blk, id), !notLastStmt(id, blk).
+notFirstStmt(id, blk) :- blockStmt(blk, id),
+                         blockStmt(blk, id_src),
+                         follows(id, id_src).
+notLastStmt(id, blk) :- blockStmt(blk, id),
+                        blockStmt(blk, id_src),
+                        follows(id_src, id).
+notEmptyBlock(blk) :- blockStmt(blk, _).
+
+#endif

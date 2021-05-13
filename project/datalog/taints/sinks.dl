@@ -1,0 +1,11 @@
+#ifndef SINKS
+#define SINKS
+
+#include "../declarations.dl"
+
+// Final output
+tainted_sinks(id) :- selfdestruct(id, addr),
+                     taintedLocal(addr, blk, _),
+                     blockStmt(blk, id).
+
+#endif

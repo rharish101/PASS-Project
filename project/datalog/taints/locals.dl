@@ -1,0 +1,51 @@
+#ifndef LOCAL_TAINTS
+#define LOCAL_TAINTS
+
+#include "../declarations.dl"
+
+// For untrusted inputs, msg.sender, and msg.value
+taintedLocal(id, blk, "cond") :- argument(id, blk_fn, _),
+                                 function(blk_fn, __),
+                                 argTaint(blk).
+taintedLocal(id, blk, "cond") :- msgSender(id), argTaint(blk).
+taintedLocal(id, blk, "cond") :- msgValue(id), argTaint(blk).
+
+// For expressions
+taintedLocal(id, blk, src) :- assign(id, id_var),
+                              taintedLocal(id_var, blk, src).
+taintedLocal(id, blk, src) :- uop(id, id_var, _),
+                              taintedLocal(id_var, blk, src).
+taintedLocal(id, blk, src) :- bop(id, id_lhs, _, _),
+                              taintedLocal(id_lhs, blk, src).
+taintedLocal(id, blk, src) :- bop(id, _, id_rhs, _),
+                              taintedLocal(id_rhs, blk, src).
+
+// For argument combinations
+taintedLocal(id, blk, src) :- transferArgument(id_transfer, id_src, idx),
+                              taintedLocal(id_src, blk_src, src),
+                              argument(id, blk, idx),
+                              goto(id_transfer, blk_src, blk).
+taintedLocal(id, blk, src) :- transferArgument(id_transfer, id_src, idx),
+                              taintedLocal(id_src, blk_src, src),
+                              argument(id, blk, idx),
+                              branch(id_transfer, _, blk_src, blk, __, ___).
+taintedLocal(id, blk, src) :- transferArgument(id_transfer, id_src, idx),
+                              taintedLocal(id_src, blk_src, src),
+                              argument(id, blk, idx),
+                              branch(_, id_transfer, blk_src, __, blk, ___).
+
+// For taints through loads
+taintedLocal(id, blk, src) :- load(id, field),
+                              blockStmt(blk, id),
+                              taintedGlobal(field, id, src).
+
+// For permanent taints, because conditional taints get implicitly passed
+// around by argTaint
+taintedLocal(id, blk, "perm") :- goto(_, blk_src, blk),
+                                 taintedLocal(id, blk_src, "perm").
+taintedLocal(id, blk, "perm") :- branch(_, __, blk_src, blk, ___, ____),
+                                 taintedLocal(id, blk_src, "perm").
+taintedLocal(id, blk, "perm") :- branch(_, __, blk_src, ___, blk, ____),
+                                 taintedLocal(id, blk_src, "perm").
+
+#endif

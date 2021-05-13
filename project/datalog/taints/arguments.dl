@@ -1,0 +1,16 @@
+#ifndef ARG_TAINTS
+#define ARG_TAINTS
+
+#include "../declarations.dl"
+
+// Virtual taint for tainting untrusted inputs, msg.sender, and msg.value
+argTaint(blk) :- function(blk, _).
+argTaint(blk) :- goto(_, blk_src, blk), argTaint(blk_src).
+argTaint(blk) :- branch(_, __, blk_src, blk, ___, id_cond),
+                 notGuard(id_cond),
+                 argTaint(blk_src).
+argTaint(blk) :- branch(_, __, blk_src, ___, blk, id_cond),
+                 notGuard(id_cond),
+                 argTaint(blk_src).
+
+#endif
