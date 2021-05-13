@@ -22,6 +22,7 @@ TESTS=(
     # '8_4,Tainted'
     '8_5,Safe'
     # '8_6,Tainted'
+    # '8_7,Tainted'
     '9_1,Safe'
     '9_1,Safe'
     '10,Tainted'
