@@ -126,11 +126,28 @@ msgValue(id) :- builtinVariable(id, "VALUE").
 
 // Your code goes here...
 
-.decl boolOp(op: Name)
-.decl compOp(op: Name)
-.decl argTaint(id_block: Block)
-.decl tainted(id: SSA, id_block: Block)
-.decl notGuard(id: SSA)
+.decl boolOp(op: Name)  // for operations on boolean values
+.decl compOp(op: Name)  // for comparison operations
+
+// For taint flow depending on guards
+.decl argTaint(id_block: Block) // taints of arguments/msg.sender/msg.value
+.decl notGuard(id: SSA)         // can't use guard, because datalog doesn't like negation loops
+
+// Taint tracking
+.decl taintedLocal(id: SSA, id_block: Block, src: Name) // local vars and args
+.decl taintedGlobal(field: Name, id: SSA, src: Name)    // global vars within a function
+.decl permaTainted(field: Name)                         // global vars being tainted forever
+
+// Statement ordering
+.decl firstStmt(id: SSA, id_block: Block)    // first statement of a block
+.decl lastStmt(id: SSA, id_block: Block)     // last statement of a block
+.decl notFirstStmt(id: SSA, id_block: Block) // negation of firstStmt for convenience
+.decl notLastStmt(id: SSA, id_block: Block)  // negation of lastStmt for convenience
+
+// For global var taints across block boundaries
+.decl taintedGlobalBlkStart(field: Name, id_block: Block, src: Name) // at the start of a block
+.decl taintedGlobalBlkEnd(field: Name, id_block: Block, src: Name)   // at the end of a block
+.decl notEmptyBlock(id_block: Block)                                 // can't use emptyBlock, because datalog uses existence
 
 // Used in notGuard
 boolOp("!").
@@ -148,40 +165,157 @@ compOp("!=").
 // Virtual taint for tainting untrusted inputs, msg.sender, and msg.value
 argTaint(blk) :- function(blk, _).
 argTaint(blk) :- goto(_, blk_src, blk), argTaint(blk_src).
-argTaint(blk) :- branch(_, __, blk_src, blk, ___, id_cond), notGuard(id_cond), argTaint(blk_src).
-argTaint(blk) :- branch(_, __, blk_src, ___, blk, id_cond), notGuard(id_cond), argTaint(blk_src).
+argTaint(blk) :- branch(_, __, blk_src, blk, ___, id_cond),
+                 notGuard(id_cond),
+                 argTaint(blk_src).
+argTaint(blk) :- branch(_, __, blk_src, ___, blk, id_cond),
+                 notGuard(id_cond),
+                 argTaint(blk_src).
 
 // For untrusted inputs, msg.sender, and msg.value
-tainted(id, blk) :- argument(id, blk_fn, _), function(blk_fn, __), argTaint(blk).
-tainted(id, blk) :- msgSender(id), argTaint(blk).
-tainted(id, blk) :- msgValue(id), argTaint(blk).
+taintedLocal(id, blk, "cond") :- argument(id, blk_fn, _),
+                                 function(blk_fn, __),
+                                 argTaint(blk).
+taintedLocal(id, blk, "cond") :- msgSender(id), argTaint(blk).
+taintedLocal(id, blk, "cond") :- msgValue(id), argTaint(blk).
 
 // For expressions
-tainted(id, blk) :- assign(id, id_var), tainted(id_var, blk).
-tainted(id, blk) :- uop(id, id_var, _), tainted(id_var, blk).
-tainted(id, blk) :- bop(id, id_lhs, _, _), tainted(id_lhs, blk).
-tainted(id, blk) :- bop(id, _, id_rhs, _), tainted(id_rhs, blk).
+taintedLocal(id, blk, src) :- assign(id, id_var),
+                              taintedLocal(id_var, blk, src).
+taintedLocal(id, blk, src) :- uop(id, id_var, _),
+                              taintedLocal(id_var, blk, src).
+taintedLocal(id, blk, src) :- bop(id, id_lhs, _, _),
+                              taintedLocal(id_lhs, blk, src).
+taintedLocal(id, blk, src) :- bop(id, _, id_rhs, _),
+                              taintedLocal(id_rhs, blk, src).
 
 // For argument combinations
-tainted(id, blk) :- transferArgument(id_transfer, id_src, idx), tainted(id_src, blk_src), argument(id, blk, idx), goto(id_transfer, blk_src, blk).
-tainted(id, blk) :- transferArgument(id_transfer, id_src, idx), tainted(id_src, blk_src), argument(id, blk, idx), branch(id_transfer, _, blk_src, blk, __, ___).
-tainted(id, blk) :- transferArgument(id_transfer, id_src, idx), tainted(id_src, blk_src), argument(id, blk, idx), branch(_, id_transfer, blk_src, __, blk, ___).
+taintedLocal(id, blk, src) :- transferArgument(id_transfer, id_src, idx),
+                              taintedLocal(id_src, blk_src, src),
+                              argument(id, blk, idx),
+                              goto(id_transfer, blk_src, blk).
+taintedLocal(id, blk, src) :- transferArgument(id_transfer, id_src, idx),
+                              taintedLocal(id_src, blk_src, src),
+                              argument(id, blk, idx),
+                              branch(id_transfer, _, blk_src, blk, __, ___).
+taintedLocal(id, blk, src) :- transferArgument(id_transfer, id_src, idx),
+                              taintedLocal(id_src, blk_src, src),
+                              argument(id, blk, idx),
+                              branch(_, id_transfer, blk_src, __, blk, ___).
+
+// For taints through loads
+taintedLocal(id, blk, src) :- load(id, field),
+                              blockStmt(blk, id),
+                              taintedGlobal(field, id, src).
+
+// For permanent taints, because conditional taints get implicitly passed
+// around by argTaint
+taintedLocal(id, blk, "perm") :- goto(_, blk_src, blk),
+                                 taintedLocal(id, blk_src, "perm").
+taintedLocal(id, blk, "perm") :- branch(_, __, blk_src, blk, ___, ____),
+                                 taintedLocal(id, blk_src, "perm").
+taintedLocal(id, blk, "perm") :- branch(_, __, blk_src, ___, blk, ____),
+                                 taintedLocal(id, blk_src, "perm").
+
+// Used for passing around taintedGlobal
+firstStmt(id, blk) :- blockStmt(blk, id), !notFirstStmt(id, blk).
+lastStmt(id, blk) :- blockStmt(blk, id), !notLastStmt(id, blk).
+notFirstStmt(id, blk) :- blockStmt(blk, id),
+                         blockStmt(blk, id_src),
+                         follows(id, id_src).
+notLastStmt(id, blk) :- blockStmt(blk, id),
+                        blockStmt(blk, id_src),
+                        follows(id_src, id).
+notEmptyBlock(blk) :- blockStmt(blk, _).
+
+// taintedGlobal rules for block start/end
+taintedGlobal(field, id, src) :- taintedGlobalBlkStart(field, blk, src),
+                                 firstStmt(id, blk).
+taintedGlobalBlkEnd(field, blk, src) :- taintedGlobal(field, id, src),
+                                        lastStmt(id, blk).
+taintedGlobalBlkEnd(field, blk, src) :- taintedGlobalBlkStart(field, blk, src),
+                                        !notEmptyBlock(blk).
+
+// Apply taintedGlobal when storing
+taintedGlobal(field, id, src) :- store(id, field, id_var),
+                                 taintedLocal(id_var, blk, src),
+                                 blockStmt(blk, id).
+
+// Apply perma-taint when loading perma-tainted globals
+taintedGlobal(field, id, "perm") :- permaTainted(field),
+                                    firstStmt(id, blk),
+                                    function(blk, _).
+
+// Pass taintedGlobal b/w statements
+taintedGlobal(field, id, src) :- taintedGlobal(field, id_src, src),
+                                 follows(id, id_src),
+                                 !store(id, field, _).
+
+// Pass taintedGlobal for each id for transfers
+taintedGlobalBlkStart(field, blk, "perm") :- goto(_, blk_src, blk),
+                                             taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "perm") :- branch(_, __, blk_src, blk, ___, ____),
+                                             taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "perm") :- branch(_, __, blk_src, ___, blk, ____),
+                                             taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "cond") :- goto(_, blk_src, blk),
+                                             taintedGlobalBlkEnd(field, blk_src, "cond"),
+                                             argTaint(blk).
+taintedGlobalBlkStart(field, blk, "cond") :- branch(_, __, blk_src, blk, ___, ____),
+                                             taintedGlobalBlkEnd(field, blk_src, "cond"),
+                                             argTaint(blk).
+taintedGlobalBlkStart(field, blk, "cond") :- branch(_, __, blk_src, ___, blk, ____),
+                                             taintedGlobalBlkEnd(field, blk_src, "cond"),
+                                             argTaint(blk).
+
+// Save perma-taints when returning
+permaTainted(field) :- return(_, blk),
+                       taintedGlobalBlkEnd(field, blk, "perm").
+permaTainted(field) :- return(_, blk),
+                       taintedGlobalBlkEnd(field, blk, "cond"),
+                       argTaint(blk).
 
 // Base guard definition
 notGuard(id) :- const(id, "True").
 notGuard(id) :- const(id, "False").
 notGuard(id) :- assign(id, _).
-notGuard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), msgSender(id_lhs), tainted(id_rhs, blk), !msgSender(id_rhs), blockStmt(blk, id).
-notGuard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), tainted(id_lhs, blk), !msgSender(id_lhs), msgSender(id_rhs), blockStmt(blk, id).
-notGuard(id) :- bop(id, id_lhs, id_rhs, op), compOp(op), !msgSender(id_lhs), !msgSender(id_rhs).
+notGuard(id) :- bop(id, id_lhs, id_rhs, op),
+                compOp(op),
+                msgSender(id_lhs),
+                taintedLocal(id_rhs, blk, _),
+                !msgSender(id_rhs),
+                blockStmt(blk, id).
+notGuard(id) :- bop(id, id_lhs, id_rhs, op),
+                compOp(op),
+                taintedLocal(id_lhs, blk, _),
+                !msgSender(id_lhs),
+                msgSender(id_rhs),
+                blockStmt(blk, id).
+notGuard(id) :- bop(id, id_lhs, id_rhs, op),
+                compOp(op),
+                !msgSender(id_lhs),
+                !msgSender(id_rhs).
 
 // Combination of guards within a require/if-else
 notGuard(id) :- uop(id, id_var, op), boolOp(op), notGuard(id_var).
-notGuard(id) :- bop(id, id_lhs, _, op), boolOp(op), notGuard(id_lhs), tainted(id_lhs, blk), blockStmt(blk, id).
-notGuard(id) :- bop(id, _, id_rhs, op), boolOp(op), notGuard(id_rhs), tainted(id_rhs, blk), blockStmt(blk, id).
-notGuard(id) :- bop(id, id_lhs, id_rhs, op), boolOp(op), notGuard(id_lhs), notGuard(id_rhs).
+notGuard(id) :- bop(id, id_lhs, _, op),
+                boolOp(op),
+                notGuard(id_lhs),
+                taintedLocal(id_lhs, blk, __),
+                blockStmt(blk, id).
+notGuard(id) :- bop(id, _, id_rhs, op),
+                boolOp(op),
+                notGuard(id_rhs),
+                taintedLocal(id_rhs, blk, __),
+                blockStmt(blk, id).
+notGuard(id) :- bop(id, id_lhs, id_rhs, op),
+                boolOp(op),
+                notGuard(id_lhs),
+                notGuard(id_rhs).
 
 // Final output
-tainted_sinks(id) :- selfdestruct(id, addr), tainted(addr, blk), blockStmt(blk, id).
+tainted_sinks(id) :- selfdestruct(id, addr),
+                     taintedLocal(addr, blk, _),
+                     blockStmt(blk, id).
 
 .output tainted_sinks
