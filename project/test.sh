@@ -33,6 +33,7 @@ TESTS=(
     '11,Safe'
     '12,Safe'
     '12_1,Safe'
+    '12_2,Safe'
     '13,Safe'
     '14,Safe'
     '15,Safe'
