@@ -32,7 +32,7 @@ TESTS=(
     '10_4,Tainted'
     '11,Safe'
     '12,Safe'
-    '12_1,Tainted'
+    '12_1,Safe'
     '13,Safe'
     '14,Safe'
     '15,Safe'

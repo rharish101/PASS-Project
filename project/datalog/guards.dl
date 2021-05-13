@@ -6,7 +6,6 @@
 // Base guard definition
 notGuard(id) :- const(id, "True").
 notGuard(id) :- const(id, "False").
-notGuard(id) :- assign(id, _).
 notGuard(id) :- bop(id, id_lhs, id_rhs, op),
                 compOp(op),
                 msgSender(id_lhs),
