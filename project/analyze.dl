@@ -137,6 +137,9 @@ msgValue(id) :- builtinVariable(id, "VALUE").
 .decl lastStmt(id: SSA, id_block: Block)
 .decl notFirstStmt(id: SSA, id_block: Block)
 .decl notLastStmt(id: SSA, id_block: Block)
+.decl taintedGlobalBlkStart(field: Name, id_block: Block, src: Name)
+.decl taintedGlobalBlkEnd(field: Name, id_block: Block, src: Name)
+.decl notEmptyBlock(id_block: Block)
 
 // Used in notGuard
 boolOp("!").
@@ -186,6 +189,12 @@ firstStmt(id, blk) :- blockStmt(blk, id), !notFirstStmt(id, blk).
 lastStmt(id, blk) :- blockStmt(blk, id), !notLastStmt(id, blk).
 notFirstStmt(id, blk) :- blockStmt(blk, id), blockStmt(blk, id_src), follows(id, id_src).
 notLastStmt(id, blk) :- blockStmt(blk, id), blockStmt(blk, id_src), follows(id_src, id).
+notEmptyBlock(blk) :- blockStmt(blk, _).
+
+// taintedGlobal rules for block start/end
+taintedGlobal(field, id, src) :- taintedGlobalBlkStart(field, blk, src), firstStmt(id, blk).
+taintedGlobalBlkEnd(field, blk, src) :- taintedGlobal(field, id, src), lastStmt(id, blk).
+taintedGlobalBlkEnd(field, blk, src) :- taintedGlobalBlkStart(field, blk, src), !notEmptyBlock(blk).
 
 // Apply taintedGlobal when storing
 taintedGlobal(field, id, src) :- store(id, field, id_var), taintedLocal(id_var, blk, src), blockStmt(blk, id).
@@ -193,18 +202,20 @@ taintedGlobal(field, id, src) :- store(id, field, id_var), taintedLocal(id_var, 
 // Apply perma-taint when loading perma-tainted globals
 taintedGlobal(field, id, "perm") :- permaTainted(field), firstStmt(id, blk), function(blk, _).
 
-// Pass taintedGlobal for each id where applicable
+// Pass taintedGlobal b/w statements
 taintedGlobal(field, id, src) :- taintedGlobal(field, id_src, src), follows(id, id_src), !store(id, field, _).
-taintedGlobal(field, id, "perm") :- goto(_, blk_src, blk), taintedGlobal(field, id_src, "perm"), firstStmt(id, blk), lastStmt(id_src, blk_src).
-taintedGlobal(field, id, "perm") :- branch(_, __, blk_src, blk, ___, ____), taintedGlobal(field, id_src, "perm"), firstStmt(id, blk), lastStmt(id_src, blk_src).
-taintedGlobal(field, id, "perm") :- branch(_, __, blk_src, ___, blk, ____), taintedGlobal(field, id_src, "perm"), firstStmt(id, blk), lastStmt(id_src, blk_src).
-taintedGlobal(field, id, "cond") :- goto(_, blk_src, blk), taintedGlobal(field, id_src, "cond"), firstStmt(id, blk), lastStmt(id_src, blk_src), argTaint(blk).
-taintedGlobal(field, id, "cond") :- branch(_, __, blk_src, blk, ___, ____), taintedGlobal(field, id_src, "cond"), firstStmt(id, blk), lastStmt(id_src, blk_src), argTaint(blk).
-taintedGlobal(field, id, "cond") :- branch(_, __, blk_src, ___, blk, ____), taintedGlobal(field, id_src, "cond"), firstStmt(id, blk), lastStmt(id_src, blk_src), argTaint(blk).
+
+// Pass taintedGlobal for each id for transfers
+taintedGlobalBlkStart(field, blk, "perm") :- goto(_, blk_src, blk), taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "perm") :- branch(_, __, blk_src, blk, ___, ____), taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "perm") :- branch(_, __, blk_src, ___, blk, ____), taintedGlobalBlkEnd(field, blk_src, "perm").
+taintedGlobalBlkStart(field, blk, "cond") :- goto(_, blk_src, blk), taintedGlobalBlkEnd(field, blk_src, "cond"), argTaint(blk).
+taintedGlobalBlkStart(field, blk, "cond") :- branch(_, __, blk_src, blk, ___, ____), taintedGlobalBlkEnd(field, blk_src, "cond"), argTaint(blk).
+taintedGlobalBlkStart(field, blk, "cond") :- branch(_, __, blk_src, ___, blk, ____), taintedGlobalBlkEnd(field, blk_src, "cond"), argTaint(blk).
 
 // Save perma-taints when returning
-permaTainted(field) :- return(_, blk), taintedGlobal(field, id, "perm"), lastStmt(id, blk).
-permaTainted(field) :- return(_, blk), taintedGlobal(field, id, "cond"), argTaint(blk), lastStmt(id, blk).
+permaTainted(field) :- return(_, blk), taintedGlobalBlkEnd(field, blk, "perm").
+permaTainted(field) :- return(_, blk), taintedGlobalBlkEnd(field, blk, "cond"), argTaint(blk).
 
 // Base guard definition
 notGuard(id) :- const(id, "True").
