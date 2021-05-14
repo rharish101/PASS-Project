@@ -145,7 +145,7 @@ for i in "${TESTS[@]}"; do
 done
 
 # Summary
-echo <<EOS
+read -r -d '' summary <<EOS
 ==================================================
 
 Test summary
@@ -161,6 +161,7 @@ ${total} test(s) run
 
 Conclusion:
 EOS
+echo "$summary"
 
 # Conclusion
 if (( failed == 0 )); then
