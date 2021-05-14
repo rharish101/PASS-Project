@@ -41,6 +41,15 @@ TESTS=(
     '16,Safe'
     '17,Safe'
     '18,Tainted'
+    '19,Safe'
+    '20,Safe'
+    '21,Safe'
+    '22_1,Safe'
+    '22_2,Safe'
+    '22_3,Tainted' # Contract is safe, but should be tainted due to depth
+    '23_1,Tainted'
+    '23_2,Tainted'
+    '23_3,Tainted'
 )
 
 declare -a to_run
