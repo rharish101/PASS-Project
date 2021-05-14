@@ -5,7 +5,7 @@
 
 // Final output
 tainted_sinks(id) :- selfdestruct(id, addr),
-                     taintedLocal(addr, blk, _),
+                     taintedLocal(addr, blk, _, __),
                      blockStmt(blk, id).
 
 #endif

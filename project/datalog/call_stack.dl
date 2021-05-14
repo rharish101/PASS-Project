@@ -1,0 +1,12 @@
+#ifndef CALL_STACK
+#define CALL_STACK
+
+#include "declarations.dl"
+
+// Calculate depth
+depth(nil, 0).
+depth([id_transfer, tail], num + 1) :- depth(tail, num),
+                                       num < 3,
+                                       jump(id_transfer, _, __, ___).
+
+#endif

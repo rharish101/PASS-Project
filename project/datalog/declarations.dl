@@ -1,17 +1,23 @@
 #ifndef CUSTOM_DECLARATIONS
 #define CUSTOM_DECLARATIONS
 
+.decl msgComponent(id: SSA)  // common for msg.sender and msg.value
+
 .decl boolOp(op: Name)  // for operations on boolean values
 .decl compOp(op: Name)  // for comparison operations
 
+// For the call stack of functions
+.type CallStack = [head: Transfer, tail: CallStack]
+.decl depth(stack: CallStack, num: number)
+
 // For taint flow depending on guards
-.decl argTaint(id_block: Block) // taints of arguments/msg.sender/msg.value
-.decl notGuard(id: SSA)         // can't use guard, because datalog doesn't like negation loops
+.decl argTaint(id_block: Block, stack: CallStack) // taints of arguments/msg.sender/msg.value
+.decl notGuard(id: SSA, stack: CallStack)         // can't use guard, because datalog doesn't like negation loops
 
 // Taint tracking
-.decl taintedLocal(id: SSA, id_block: Block, src: Name) // local vars and args
-.decl taintedGlobal(field: Name, id: SSA, src: Name)    // global vars within a function
-.decl permaTainted(field: Name)                         // global vars being tainted forever
+.decl taintedLocal(id: SSA, id_block: Block, src: Name, stack: CallStack) // local vars and args
+.decl taintedGlobal(field: Name, id: SSA, src: Name, stack: CallStack)    // global vars within a function
+.decl permaTainted(field: Name)                                           // global vars being tainted forever
 
 // Statement ordering
 .decl firstStmt(id: SSA, id_block: Block)    // first statement of a block
@@ -20,8 +26,17 @@
 .decl notLastStmt(id: SSA, id_block: Block)  // negation of lastStmt for convenience
 
 // For global var taints across block boundaries
-.decl taintedGlobalBlkStart(field: Name, id_block: Block, src: Name) // at the start of a block
-.decl taintedGlobalBlkEnd(field: Name, id_block: Block, src: Name)   // at the end of a block
-.decl notEmptyBlock(id_block: Block)                                 // can't use emptyBlock, because datalog uses existence
+.decl taintedGlobalBlkStart(field: Name,
+                            id_block: Block,
+                            src: Name,
+                            stack: CallStack) // at the start of a block
+.decl taintedGlobalBlkEnd(field: Name,
+                          id_block: Block,
+                          src: Name,
+                          stack: CallStack)   // at the end of a block
+.decl notEmptyBlock(id_block: Block)          // can't use emptyBlock, because datalog uses existence
+
+// For tracking taints across function returns
+.decl blockFollows(id_block_next: Block, id_block_prev: Block)
 
 #endif

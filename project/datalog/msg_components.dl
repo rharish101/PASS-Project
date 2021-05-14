@@ -1,0 +1,10 @@
+#ifndef MSG_COMP
+#define MSG_COMP
+
+#include "declarations.dl"
+
+// Prevents code duplication
+msgComponent(id) :- msgSender(id).
+msgComponent(id) :- msgValue(id).
+
+#endif

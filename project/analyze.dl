@@ -127,14 +127,18 @@ msgValue(id) :- builtinVariable(id, "VALUE").
 // Your code goes here...
 
 // Definitions used for taint tracking
+#include "datalog/call_stack.dl"
 #include "datalog/guards.dl"
+#include "datalog/msg_components.dl"
 #include "datalog/operations.dl"
 #include "datalog/tracking.dl"
 
 // Definitions for the actual taint tracking
 #include "datalog/taints/arguments.dl"
 #include "datalog/taints/globals.dl"
+#include "datalog/taints/jumps.dl"
 #include "datalog/taints/locals.dl"
+#include "datalog/taints/returns.dl"
 #include "datalog/taints/sinks.dl"
 
-.output tainted_sinks
+.output tainted_sinks, taintedLocal, taintedGlobal, argTaint, permaTainted, notGuard, blockFollows, depth
