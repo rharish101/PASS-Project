@@ -56,7 +56,9 @@ taintedGlobalBlkStart(field, blk, src, stack) :- return(_, blk_src),
 taintedGlobalBlkStart(field, blk, "perm", stack) :- return(_, blk_src),
                                                     jump(__, ___, blk_fn, blk),
                                                     blockFollows(blk_src, blk_fn),
-                                                    store(____, field, _____),
+                                                    store(id_1, field, ____),
+                                                    store(id_2, field, _____),
+                                                    id_1 != id_2,
                                                     depth(stack, 2).
 
 #endif
