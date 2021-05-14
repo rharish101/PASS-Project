@@ -67,14 +67,14 @@ done
 
 should_run ()
 {
-    local arg=$1
+    local arg="$1"
 
     if (( ${#to_run} == 0 )); then
         return 0;
     fi
 
     for i in "${to_run[@]}"; do
-        if [[ $i == $arg ]]; then
+        if [[ "$i" == "$arg" ]]; then
             return 0;
         fi
     done
@@ -90,16 +90,16 @@ total=0
 
 for i in "${TESTS[@]}"; do
     while IFS=, read -r num expected; do
-        should_run $num || continue
+        should_run "$num" || continue
         out=$(python analyze.py test_contracts/$num.sol)
-        if [[ $out != $expected ]]; then
+        if [[ "$out" != "$expected" ]]; then
             echo "${num}.sol failed: Got $out, expected $expected"
             ((failed+=1))
 
-            if [[ $out == "Safe" ]]; then
+            if [[ "$out" == "Safe" ]]; then
                 # out=Safe, expected=Tainted --> Unsound!
                 ((unsound+=1))
-            elif [[ $out == "Tainted" ]]; then
+            elif [[ "$out" == "Tainted" ]]; then
                 # out=Tainted, expected=Safe --> Imprecise!
                 ((imprecise+=1))
             else
@@ -107,11 +107,11 @@ for i in "${TESTS[@]}"; do
                 ((unknown+=1))
             fi
         else
-            echo "${num}.sol worked"
+            echo "$num.sol worked"
             ((clean+=1))
         fi
         ((total+=1))
-    done <<< $i
+    done <<< "$i"
 done
 
 # Summary
