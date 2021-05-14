@@ -5,7 +5,8 @@
 
 // taintedGlobal rules for block start/end
 taintedGlobal(field, id, src, stack) :- taintedGlobalBlkStart(field, blk, src, stack),
-                                        firstStmt(id, blk).
+                                        firstStmt(id, blk),
+                                        !store(id, field, _).
 taintedGlobalBlkEnd(field, blk, src, stack) :- taintedGlobal(field, id, src, stack),
                                                lastStmt(id, blk).
 taintedGlobalBlkEnd(field, blk, src, stack) :- taintedGlobalBlkStart(field, blk, src, stack),
