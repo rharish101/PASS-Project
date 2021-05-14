@@ -72,19 +72,70 @@ should_run ()
     return 1
 }
 
-return_val=0
+clean=0
+failed=0
+imprecise=0
+unsound=0
+unknown=0
+total=0
+
 for i in "${TESTS[@]}"; do
     while IFS=, read -r num expected; do
         should_run $num || continue
         out=$(python analyze.py test_contracts/$num.sol)
         if [[ $out != $expected ]]; then
             echo "${num}.sol failed: Got $out, expected $expected"
-            return_val=1
+            ((failed+=1))
+
+            if [[ $out == "Safe" ]]; then
+                # out=Safe, expected=Tainted --> Unsound!
+                ((unsound+=1))
+            elif [[ $out == "Tainted" ]]; then
+                # out=Tainted, expected=Safe --> Imprecise!
+                ((imprecise+=1))
+            else
+                # Unknown output!
+                ((unknown+=1))
+            fi
+        else
+            echo "${num}.sol worked"
+            ((clean+=1))
         fi
+        ((total+=1))
     done <<< $i
 done
 
-if (( return_val == 0 )); then
-    echo "All test(s) passed"
+# Summary
+echo ""
+echo "=================================================="
+echo ""
+echo "Test summary"
+echo ""
+echo "${total} test(s) run"
+echo "- ${clean} test(s) worked"
+echo "- ${failed} test(s) failed"
+echo "  - ${unsound} unsound"
+echo "  - ${imprecise} imprecise"
+echo "  - ${unknown} unknown"
+echo ""
+echo "=================================================="
+echo ""
+echo "Conclusion:"
+
+# Conclusion
+if (( failed == 0 )); then
+    echo "All tests passed"
+    exit 0
 fi
-exit $return_val
+
+if (( unsound > 0 )); then
+    echo "The analyzer is unsound!"
+fi
+if (( imprecise > 0 )); then
+    echo "The analyzer is imprecise!"
+fi
+if (( unknown > 0 )); then
+    echo "The analyzer has unknown output!"
+fi
+
+exit 1
