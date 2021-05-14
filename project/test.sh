@@ -118,9 +118,18 @@ unsound=0
 unknown=0
 total=0
 
+score=0
+max_score=0
+
 for i in "${TESTS[@]}"; do
     while IFS=, read -r num expected; do
         should_run "$num" || continue
+
+        ((total+=1))
+        if [[ "$expected" == "Safe" ]]; then
+            ((max_score+=1))
+        fi
+
         out=$(python analyze.py test_contracts/$num.sol)
         if [[ "$out" != "$expected" ]]; then
             echo "${num}.sol $(colour red failed): Got $out, expected $expected"
@@ -129,6 +138,7 @@ for i in "${TESTS[@]}"; do
             if [[ "$out" == "Safe" ]]; then
                 # out=Safe, expected=Tainted --> Unsound!
                 ((unsound+=1))
+                ((score-=2))
             elif [[ "$out" == "Tainted" ]]; then
                 # out=Tainted, expected=Safe --> Imprecise!
                 ((imprecise+=1))
@@ -139,8 +149,10 @@ for i in "${TESTS[@]}"; do
         else
             echo "$num.sol $(colour green worked)"
             ((clean+=1))
+            if [[ "$out" == "Safe" ]]; then
+                ((score+=1))
+            fi
         fi
-        ((total+=1))
     done <<< "$i"
 done
 
@@ -156,6 +168,8 @@ ${total} test(s) run
   - ${unsound} unsound
   - ${imprecise} imprecise
   - ${unknown} unknown
+
+Total score: ${score}/${max_score}
 
 ==================================================
 
