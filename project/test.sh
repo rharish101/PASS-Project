@@ -5,6 +5,7 @@ Run analysis on test contracts.
 By default runs on all contracts.
 
     -h, --help      Display help and exit
+    -c, --colour    Force coloured output
 EOS
 
 TESTS=(
@@ -52,6 +53,13 @@ TESTS=(
     '23_3,Tainted'
 )
 
+if [ -t 1 ]; then
+    is_terminal=true
+else
+    is_terminal=false
+fi
+
+force_colour=false
 declare -a to_run
 while [ ! -z "$1" ]; do
     case "$1" in
@@ -59,11 +67,33 @@ while [ ! -z "$1" ]; do
             echo "$usage"
             exit 0
             ;;
+        -c|--colour)
+            force_color=true
+            ;;
         *)
             to_run+=("$1")
     esac
     shift
 done
+
+colour ()
+{
+    local colour_name="$1"
+    shift
+    local text="$*"
+
+    if [ $is_terminal = false ] && [ $force_colour = false ]; then
+        colour_name=""
+    fi
+
+    if [[ "$colour_name" == "green" ]]; then
+        echo -e "\e[32m${text}\e[0m"
+    elif [[ "$colour_name" == "red" ]]; then
+        echo -e "\e[31m${text}\e[0m"
+    else
+        echo "$text"
+    fi
+}
 
 should_run ()
 {
@@ -93,7 +123,7 @@ for i in "${TESTS[@]}"; do
         should_run "$num" || continue
         out=$(python analyze.py test_contracts/$num.sol)
         if [[ "$out" != "$expected" ]]; then
-            echo "${num}.sol failed: Got $out, expected $expected"
+            echo "${num}.sol $(colour red failed): Got $out, expected $expected"
             ((failed+=1))
 
             if [[ "$out" == "Safe" ]]; then
@@ -107,7 +137,7 @@ for i in "${TESTS[@]}"; do
                 ((unknown+=1))
             fi
         else
-            echo "$num.sol worked"
+            echo "$num.sol $(colour green worked)"
             ((clean+=1))
         fi
         ((total+=1))
