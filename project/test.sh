@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-read -r -d '' usage <<EOF
+read -r -d '' usage <<EOS
 Usage: $(basename $0) [OPTION] [TEST]...
 Run analysis on test contracts.
 By default runs on all contracts.
 
     -h, --help      Display help and exit
-EOF
+EOS
 
 TESTS=(
     '0,Tainted'
@@ -115,21 +115,22 @@ for i in "${TESTS[@]}"; do
 done
 
 # Summary
-echo ""
-echo "=================================================="
-echo ""
-echo "Test summary"
-echo ""
-echo "${total} test(s) run"
-echo "- ${clean} test(s) worked"
-echo "- ${failed} test(s) failed"
-echo "  - ${unsound} unsound"
-echo "  - ${imprecise} imprecise"
-echo "  - ${unknown} unknown"
-echo ""
-echo "=================================================="
-echo ""
-echo "Conclusion:"
+echo <<EOS
+==================================================
+
+Test summary
+
+${total} test(s) run
+- ${clean} test(s) worked
+- ${failed} test(s) failed
+  - ${unsound} unsound
+  - ${imprecise} imprecise
+  - ${unknown} unknown
+
+==================================================
+
+Conclusion:
+EOS
 
 # Conclusion
 if (( failed == 0 )); then
