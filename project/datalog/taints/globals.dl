@@ -21,6 +21,7 @@ taintedGlobal(field, id, src, stack) :- store(id, field, id_var),
 taintedGlobal(field, id, "perm", stack) :- permaTainted(field),
                                            firstStmt(id, blk),
                                            function(blk, _),
+                                           validIdStack(id, stack),
                                            depth(stack, num),
                                            num < 3.
 

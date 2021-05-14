@@ -10,6 +10,11 @@
 .type CallStack = [head: Transfer, tail: CallStack]
 .decl depth(stack: CallStack, num: number)
 
+// Checking validitiy of a stack
+.decl validStack(stack: CallStack)
+.decl validBlkStack(id_block: Block, stack: CallStack)  // stack with a block
+.decl validIdStack(id: SSA, stack: CallStack)  // stack with a statement
+
 // For taint flow depending on guards
 .decl argTaint(id_block: Block, stack: CallStack) // taints of arguments/msg.sender/msg.value
 .decl notGuard(id: SSA, stack: CallStack)         // can't use guard, because datalog doesn't like negation loops

@@ -6,7 +6,26 @@
 // Calculate depth
 depth(nil, 0).
 depth([id_transfer, tail], num + 1) :- depth(tail, num),
-                                       num < 3,
-                                       jump(id_transfer, _, __, ___).
+                                       validStack([id_transfer, tail]).
+
+// Whether a stack is valid by itself
+validStack(nil).
+validStack([id_transfer, nil]) :- jump(id_transfer, _, __, ___).
+validStack(stack) :- stack = [id_1, [id_2, nil]],
+                     jump(id_2, _, blk_fn, __),
+                     jump(id_1, blk_src, ___, ____),
+                     blockFollows(blk_src, blk_fn).
+
+validBlkStack(blk, nil) :- block(blk).
+validBlkStack(blk, stack) :- validStack(stack),
+                             stack = [id_transfer, tail],
+                             jump(id_transfer, __, blk_fn, ___),
+                             blockFollows(blk, blk_fn).
+
+validIdStack(id, nil) :- statement(id).
+validIdStack(id, stack) :- validBlkStack(blk, stack),
+                           blockStmt(blk, id).
+validIdStack(id, stack) :- validBlkStack(blk, stack),
+                           argument(id, blk, _).
 
 #endif
