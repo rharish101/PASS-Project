@@ -42,9 +42,23 @@ TESTS=(
     'locals,notguard-inside-guard,Safe'
     'globals,perma-taint-local-clean,Safe'
     'globals,return-inside-empty-blk,Tainted'
-    'functions,infinite-recursion,Safe'
+    'functions,infinite-recursion-safe-global,Safe'
+    'functions,infinite-recursion-safe-local,Safe'
+    'functions,infinite-recursion-vulnerable-global,Tainted'
+    'functions,infinite-recursion-vulnerable-local,Tainted'
+    'functions,infinite-recursion-fake-vulnerable-global,Tainted' # Contract is safe, but should be tainted due to depth
+    'functions,infinite-recursion-fake-vulnerable-local,Tainted' # Contract is safe, but should be tainted due to depth
+    'functions,mutual-recursion-safe-global,Safe'
+    'functions,mutual-recursion-safe-local,Safe'
+    'functions,mutual-recursion-vulnerable-global,Tainted'
+    'functions,mutual-recursion-vulnerable-local,Tainted'
+    'functions,mutual-recursion-fake-vulnerable-global,Tainted' # Contract is safe, but should be tainted due to depth
+    'functions,mutual-recursion-fake-vulnerable-local,Tainted' # Contract is safe, but should be tainted due to depth
     'functions,clean-function-clean-inside,Safe'
     'functions,clean-function-clean-on-return,Safe'
+    'functions,dirty-function-clean-outside,Safe'
+    'functions,dirty-function-guard-outside,Safe'
+    'functions,nested-guard-recursive,Tainted' # Contract is safe, but should be tainted due to depth
     'functions,nested-guard-1-level,Safe'
     'functions,nested-guard-2-levels,Safe'
     'functions,nested-guard-3-levels,Tainted' # Contract is safe, but should be tainted due to depth
