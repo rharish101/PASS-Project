@@ -141,4 +141,4 @@ msgValue(id) :- builtinVariable(id, "VALUE").
 #include "datalog/taints/returns.dl"
 #include "datalog/taints/sinks.dl"
 
-.output tainted_sinks, taintedLocal, taintedGlobal, argTaint, permaTainted, notGuard, blockFollows, depth
+.output tainted_sinks
