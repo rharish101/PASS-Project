@@ -97,15 +97,14 @@ colour ()
 
 should_run ()
 {
-    local folder="$1"
-    local num="$2"
+    local test_path="$1"
 
     if (( ${#to_run} == 0 )); then
         return 0;
     fi
 
     for i in "${to_run[@]}"; do
-        if [[ "$i" == "$folder" ]] || [[ "$i" == "$num" ]]; then
+        if [[ "$test_path" == *"$i"* ]]; then
             return 0;
         fi
     done
@@ -124,14 +123,15 @@ max_score=0
 
 for i in "${TESTS[@]}"; do
     while IFS=, read -r folder num expected; do
-        should_run "$folder" "$num" || continue
+        test_path="test_contracts/$folder/$num.sol"
+        should_run "$test_path" || continue
 
         ((total+=1))
         if [[ "$expected" == "Safe" ]]; then
             ((max_score+=1))
         fi
 
-        out="$(python analyze.py "test_contracts/$folder/$num.sol")"
+        out="$(python analyze.py "$test_path")"
         if [[ "$out" != "$expected" ]]; then
             echo "$folder/$num.sol $(colour red failed): Got $out, expected $expected"
             ((failed+=1))
