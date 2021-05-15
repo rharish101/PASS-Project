@@ -18,12 +18,11 @@ taintedGlobal(field, id, src, stack) :- store(id, field, id_var),
                                         blockStmt(blk, id).
 
 // Apply perma-taint when loading perma-tainted globals
-taintedGlobal(field, id, "perm", stack) :- permaTainted(field),
-                                           firstStmt(id, blk),
-                                           function(blk, _),
-                                           validIdStack(id, stack),
-                                           depth(stack, num),
-                                           num < 3.
+taintedGlobalBlkStart(field, blk, "perm", stack) :- permaTainted(field),
+                                                    function(blk, _),
+                                                    validBlkStack(blk, stack),
+                                                    depth(stack, num),
+                                                    num < 3.
 
 // Pass taintedGlobal b/w statements
 taintedGlobal(field, id, src, stack) :- taintedGlobal(field, id_src, src, stack),
