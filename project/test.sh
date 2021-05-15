@@ -42,15 +42,15 @@ TESTS=(
     'locals,notguard-inside-guard,Safe'
     'globals,perma-taint-local-clean,Safe'
     'globals,return-inside-empty-blk,Tainted'
-    'functions,19,Safe'
-    'functions,20,Safe'
-    'functions,21,Safe'
-    'functions,22_1,Safe'
-    'functions,22_2,Safe'
-    'functions,22_3,Tainted' # Contract is safe, but should be tainted due to depth
-    'functions,23_1,Tainted'
-    'functions,23_2,Tainted'
-    'functions,23_3,Tainted'
+    'functions,infinite-recursion,Safe'
+    'functions,clean-function-clean-inside,Safe'
+    'functions,clean-function-clean-on-return,Safe'
+    'functions,nested-guard-1-level,Safe'
+    'functions,nested-guard-2-levels,Safe'
+    'functions,nested-guard-3-levels,Tainted' # Contract is safe, but should be tainted due to depth
+    'functions,nested-notguard-1-level,Tainted'
+    'functions,nested-notguard-2-levels,Tainted'
+    'functions,nested-notguard-3-levels,Tainted'
 )
 
 if [ -t 1 ]; then
