@@ -9,48 +9,48 @@ By default runs on all contracts.
 EOS
 
 TESTS=(
-    '0,Tainted'
-    '1,Tainted'
-    '2,Safe'
-    '3,Safe'
-    '4,Tainted'
-    '5,Safe'
-    '6,Tainted'
-    '7,Tainted'
-    '7_1,Safe'
-    '8_1,Safe'
-    '8_2,Safe'
-    '8_3,Safe'
-    '8_4,Tainted'
-    '8_5,Safe'
-    '8_6,Tainted'
-    '8_7,Tainted'
-    '9_1,Safe'
-    '9_1,Safe'
-    '10,Tainted'
-    '10_1,Tainted'
-    '10_2,Safe'
-    '10_3,Safe'
-    '10_4,Tainted'
-    '11,Safe'
-    '12,Safe'
-    '12_1,Safe'
-    '12_2,Safe'
-    '13,Safe'
-    '14,Safe'
-    '15,Safe'
-    '16,Safe'
-    '17,Safe'
-    '18,Tainted'
-    '19,Safe'
-    '20,Safe'
-    '21,Safe'
-    '22_1,Safe'
-    '22_2,Safe'
-    '22_3,Tainted' # Contract is safe, but should be tainted due to depth
-    '23_1,Tainted'
-    '23_2,Tainted'
-    '23_3,Tainted'
+    'globals,0,Tainted'
+    'locals,1,Tainted'
+    'globals,2,Safe'
+    'globals,3,Safe'
+    'globals,4,Tainted'
+    'locals,5,Safe'
+    'locals,6,Tainted'
+    'functions,7,Tainted'
+    'functions,guard-func-call,Safe'
+    'globals,8_1,Safe'
+    'globals,8_2,Safe'
+    'globals,global-temp-taint,Safe'
+    'globals,perma-taint-passing,Tainted'
+    'globals,global-temp-perma-taint,Safe'
+    'globals,guard-perma-taints,Tainted'
+    'globals,local-var-perma-taint-global-clean,Tainted'
+    'locals,9_1,Safe'
+    'locals,9_1,Safe'
+    'locals,10,Tainted'
+    'locals,assign-outside-guard,Tainted'
+    'locals,assign-inside-guard,Safe'
+    'locals,taint-used-in-good-blk,Safe'
+    'locals,taint-used-in-bad-blk,Tainted'
+    'locals,11,Safe'
+    'locals,12,Safe'
+    'locals,bool-var-guard,Safe'
+    'locals,args-inside-guard,Safe'
+    'locals,13,Safe'
+    'locals,14,Safe'
+    'locals,good-blk-taint-plus-bad-blk-clean,Safe'
+    'locals,notguard-inside-guard,Safe'
+    'globals,perma-taint-local-clean,Safe'
+    'globals,return-inside-empty-blk,Tainted'
+    'functions,infinite-recursion,Safe'
+    'functions,clean-function-clean-inside,Safe'
+    'functions,clean-function-clean-on-return,Safe'
+    'functions,nested-guard-1-level,Safe'
+    'functions,nested-guard-2-levels,Safe'
+    'functions,nested-guard-3-levels,Tainted' # Contract is safe, but should be tainted due to depth
+    'functions,nested-notguard-1-level,Tainted'
+    'functions,nested-notguard-2-levels,Tainted'
+    'functions,nested-notguard-3-levels,Tainted'
 )
 
 if [ -t 1 ]; then
@@ -97,14 +97,15 @@ colour ()
 
 should_run ()
 {
-    local arg="$1"
+    local folder="$1"
+    local num="$2"
 
     if (( ${#to_run} == 0 )); then
         return 0;
     fi
 
     for i in "${to_run[@]}"; do
-        if [[ "$i" == "$arg" ]]; then
+        if [[ "$i" == "$folder" ]] || [[ "$i" == "$num" ]]; then
             return 0;
         fi
     done
@@ -122,17 +123,17 @@ score=0
 max_score=0
 
 for i in "${TESTS[@]}"; do
-    while IFS=, read -r num expected; do
-        should_run "$num" || continue
+    while IFS=, read -r folder num expected; do
+        should_run "$folder" "$num" || continue
 
         ((total+=1))
         if [[ "$expected" == "Safe" ]]; then
             ((max_score+=1))
         fi
 
-        out=$(python analyze.py test_contracts/$num.sol)
+        out="$(python analyze.py "test_contracts/$folder/$num.sol")"
         if [[ "$out" != "$expected" ]]; then
-            echo "${num}.sol $(colour red failed): Got $out, expected $expected"
+            echo "$folder/$num.sol $(colour red failed): Got $out, expected $expected"
             ((failed+=1))
 
             if [[ "$out" == "Safe" ]]; then
@@ -147,7 +148,7 @@ for i in "${TESTS[@]}"; do
                 ((unknown+=1))
             fi
         else
-            echo "$num.sol $(colour green worked)"
+            echo "$folder/$num.sol $(colour green worked)"
             ((clean+=1))
             if [[ "$out" == "Safe" ]]; then
                 ((score+=1))
