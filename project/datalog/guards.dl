@@ -4,14 +4,8 @@
 #include "declarations.dl"
 
 // Base guard definition
-notGuard(id, stack) :- const(id, "True"),
-                       validIdStack(id, stack),
-                       depth(stack, num),
-                       num < 3.
-notGuard(id, stack) :- const(id, "False"),
-                       validIdStack(id, stack),
-                       depth(stack, num),
-                       num < 3.
+notGuard(id, stack) :- const(id, "True"), validIdStack(id, stack).
+notGuard(id, stack) :- const(id, "False"), validIdStack(id, stack).
 notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
                        compOp(op),
                        msgSender(id_lhs),
@@ -28,9 +22,7 @@ notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
                        compOp(op),
                        !msgSender(id_lhs),
                        !msgSender(id_rhs),
-                       validIdStack(id, stack),
-                       depth(stack, num),
-                       num < 3.
+                       validIdStack(id, stack).
 
 // Combination of guards within a require/if-else
 notGuard(id, stack) :- assign(id, id_var),

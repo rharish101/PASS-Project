@@ -20,9 +20,7 @@ taintedGlobal(field, id, src, stack) :- store(id, field, id_var),
 // Apply perma-taint when loading perma-tainted globals
 taintedGlobalBlkStart(field, blk, "perm", stack) :- permaTainted(field),
                                                     function(blk, _),
-                                                    validBlkStack(blk, stack),
-                                                    depth(stack, num),
-                                                    num < 3.
+                                                    validBlkStack(blk, stack).
 
 // Pass taintedGlobal b/w statements
 taintedGlobal(field, id, src, stack) :- taintedGlobal(field, id_src, src, stack),
