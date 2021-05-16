@@ -33,6 +33,8 @@ notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
                        num < 3.
 
 // Combination of guards within a require/if-else
+notGuard(id, stack) :- assign(id, id_var),
+                       notGuard(id_var, stack).
 notGuard(id, stack) :- uop(id, id_var, op),
                        boolOp(op),
                        notGuard(id_var, stack).

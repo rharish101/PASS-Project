@@ -35,6 +35,7 @@ TESTS=(
     'locals,11,Safe'
     'locals,12,Safe'
     'locals,bool-var-guard,Safe'
+    'locals,bool-var-notguard,Tainted'
     'locals,args-inside-guard,Safe'
     'locals,13,Safe'
     'locals,14,Safe'
