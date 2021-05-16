@@ -5,16 +5,16 @@
 
 // Getting guards
 argTaint(blk, stack) :- return(_, blk_src),
-                       jump(id_jump, __, blk_fn, blk),
-                       blockFollows(blk_src, blk_fn),
-                       argTaint(blk_src, [id_jump, stack]),
-                       depth(stack, num),
-                       num < 2.
+                        jump(id_jump, __, blk_fn, blk),
+                        blockFollows(blk_src, blk_fn),
+                        argTaint(blk_src, [id_jump, stack]),
+                        depth(stack, num),
+                        num < 2.
 argTaint(blk, stack) :- return(_, blk_src),
-                       jump(__, ___, blk_fn, blk),
-                       blockFollows(blk_src, blk_fn),
-                       validBlkStack(blk, stack),
-                       depth(stack, 2).
+                        jump(__, ___, blk_fn, blk),
+                        blockFollows(blk_src, blk_fn),
+                        validBlkStack(blk, stack),
+                        depth(stack, 2).
 
 // Getting guards
 notGuard(id, stack) :- transferArgument(id_return, id_src, idx),
