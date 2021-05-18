@@ -45,4 +45,18 @@ notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
                        notGuard(id_lhs, stack),
                        notGuard(id_rhs, stack).
 
+// For argument combinations
+notGuard(id, stack) :- transferArgument(id_transfer, id_src, idx),
+                       notGuard(id_src, stack),
+                       argument(id, blk, idx),
+                       goto(id_transfer, _, blk).
+notGuard(id, stack) :- transferArgument(id_transfer, id_src, idx),
+                       notGuard(id_src, stack),
+                       argument(id, blk, idx),
+                       branch(id_transfer, _, __, blk, ___, ____).
+notGuard(id, stack) :- transferArgument(id_transfer, id_src, idx),
+                       notGuard(id_src, stack),
+                       argument(id, blk, idx),
+                       branch(_, id_transfer, __, ___, blk, ____).
+
 #endif
