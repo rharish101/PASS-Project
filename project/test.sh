@@ -67,6 +67,7 @@ TESTS=(
     'functions,nested-notguard-1-level,Tainted'
     'functions,nested-notguard-2-levels,Tainted'
     'functions,nested-notguard-3-levels,Tainted'
+    'globals,bool-global-notguard,Tainted'
 )
 
 if [ -t 1 ]; then
