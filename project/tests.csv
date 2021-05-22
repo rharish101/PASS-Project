@@ -37,12 +37,14 @@ functions,infinite-recursion-safe-global,Safe
 functions,infinite-recursion-safe-local,Safe
 functions,infinite-recursion-vulnerable-global,Tainted
 functions,infinite-recursion-vulnerable-local,Tainted
+functions,infinite-recursion-vulnerable-local-2,Tainted
 functions,infinite-recursion-fake-vulnerable-global,Tainted
 functions,infinite-recursion-fake-vulnerable-local,Tainted
 functions,mutual-recursion-safe-global,Safe
 functions,mutual-recursion-safe-local,Safe
 functions,mutual-recursion-vulnerable-global,Tainted
 functions,mutual-recursion-vulnerable-local,Tainted
+functions,mutual-recursion-vulnerable-local-2,Tainted
 functions,mutual-recursion-fake-vulnerable-global,Tainted
 functions,mutual-recursion-fake-vulnerable-local,Tainted
 functions,clean-function-clean-inside,Safe
