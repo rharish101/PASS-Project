@@ -4,4 +4,4 @@ __pycache__/
 *.egg-info/
 
 # Analyzer outputs
-project/test_contracts/*_out/
+project/test_contracts/**/*_out/
