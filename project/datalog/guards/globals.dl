@@ -1,0 +1,34 @@
+#ifndef GLOBAL_MSG_SENDER
+#define GLOBAL_MSG_SENDER
+
+#include "../declarations.dl"
+
+// Base case
+noMsgSenderGlobalBlkStart(field, blk, nil) :- function(blk, _),
+                                              store(_, field, _).
+
+// noMsgSenderGlobal rules for block start/end
+noMsgSenderGlobal(field, id, stack) :- noMsgSenderGlobalBlkStart(field, blk, stack),
+                                       firstStmt(id, blk),
+                                       !store(id, field, _).
+noMsgSenderGlobalBlkEnd(field, blk, stack) :- noMsgSenderGlobal(field, id, stack),
+                                              lastStmt(id, blk).
+noMsgSenderGlobalBlkEnd(field, blk, stack) :- noMsgSenderGlobalBlkStart(field, blk, stack),
+                                              !notEmptyBlock(blk).
+
+// Apply noMsgSenderGlobal when storing
+noMsgSenderGlobal(field, id, stack) :- store(id, field, id_var),
+                                       noMsgSenderLocal(id_var, stack).
+
+// Pass noMsgSenderGlobal b/w statements
+noMsgSenderGlobal(field, id, stack) :- noMsgSenderGlobal(field, id_src, stack),
+                                       follows(id, id_src),
+                                       !store(id, field, _).
+
+// Pass noMsgSenderGlobal for each id for transfers
+noMsgSenderGlobalBlkStart(field, blk, stack) :- (goto(_, blk_src, blk);
+                                                  branch(_, _, blk_src, blk, _, _);
+                                                  branch(_, _, blk_src, _, blk, _)),
+                                                 noMsgSenderGlobalBlkEnd(field, blk_src, stack).
+
+#endif

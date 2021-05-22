@@ -11,9 +11,18 @@
 .decl validIdStack(id: SSA, stack: CallStack)          // stack with a statement
 
 // For taint flow depending on guards
-.decl argTaint(id_block: Block, stack: CallStack)          // taints of arguments/msg.sender/msg.value
-.decl notGuard(id: SSA, id_block: Block, stack: CallStack) // can't use guard, because datalog doesn't like negation loops
-.decl noMsgSender(id: SSA, stack: CallStack)               // can't use taintedLocal, because datalog doesn't like negation loops
+.decl argTaint(id_block: Block, stack: CallStack)               // taints of arguments/msg.sender/msg.value
+.decl notGuard(id: SSA, id_block: Block, stack: CallStack)      // can't use guard, because datalog doesn't like negation loops
+.decl noMsgSenderLocal(id: SSA, stack: CallStack)               // can't use taintedLocal, because datalog doesn't like negation loops
+.decl noMsgSenderGlobal(field: Name, id: SSA, stack: CallStack) // can't use taintedLocal, because datalog doesn't like negation loops
+
+// For guards in global vars across block boundaries
+.decl noMsgSenderGlobalBlkStart(field: Name,
+                                id_block: Block,
+                                stack: CallStack) // at the start of a block
+.decl noMsgSenderGlobalBlkEnd(field: Name,
+                              id_block: Block,
+                              stack: CallStack)   // at the end of a block
 
 // Taint tracking
 .decl taintedLocal(id: SSA, id_block: Block, src: Name, stack: CallStack) // local vars and args
@@ -35,9 +44,9 @@
                           id_block: Block,
                           src: Name,
                           stack: CallStack)   // at the end of a block
-.decl notEmptyBlock(id_block: Block)          // can't use emptyBlock, because datalog uses existence
 
-// For tracking taints across function returns
+// For tracking guards/taints across function returns
 .decl blockFollows(id_block_next: Block, id_block_prev: Block)
+.decl notEmptyBlock(id_block: Block)                           // can't use emptyBlock, because datalog uses existence
 
 #endif

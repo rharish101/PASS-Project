@@ -32,13 +32,18 @@ taintedGlobalBlkStart(field, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
                                                  depth(stack, num),
                                                  num < 3.
 
-// Pass around guards
-noMsgSender(id, stack) :- argument(id, blk_fn, idx),
-                          jump(id_jump, _, blk_fn, _),
-                          transferArgument(id_jump, id_src, idx),
-                          noMsgSender(id_src, tail),
-                          stack = [id_jump, tail],
-                          depth(stack, num),
-                          num < 3.
+// Pass around msg.sender presence
+noMsgSenderLocal(id, stack) :- argument(id, blk_fn, idx),
+                               jump(id_jump, _, blk_fn, _),
+                               transferArgument(id_jump, id_src, idx),
+                               noMsgSenderLocal(id_src, tail),
+                               stack = [id_jump, tail],
+                               depth(stack, num),
+                               num < 3.
+noMsgSenderGlobalBlkStart(field, blk, stack) :- jump(id_jump, blk_src, blk, _),
+                                                noMsgSenderGlobalBlkEnd(field, blk_src, tail),
+                                                stack = [id_jump, tail],
+                                                depth(stack, num),
+                                                num < 3.
 
 #endif
