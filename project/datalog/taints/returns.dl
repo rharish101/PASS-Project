@@ -48,8 +48,7 @@ taintedGlobalBlkStart(field, blk, src, stack) :- return(_, blk_src),
                                                   depth(stack, num),
                                                   num < 2
                                                   ;
-                                                  src = "perm",
-                                                  taintedGlobal(field, _, _, _),
+                                                  taintedGlobal(field, _, src, _),
                                                   validBlkStack(blk, stack),
                                                   depth(stack, 2)).
 
