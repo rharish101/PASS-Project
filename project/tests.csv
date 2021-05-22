@@ -100,3 +100,4 @@ preliminary,40,Tainted
 preliminary,41,Safe
 preliminary,42,Tainted
 locals,multiple-selfdestruct,Safe
+locals,taint-passing-after-transfer-arg,Tainted
