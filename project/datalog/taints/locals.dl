@@ -61,5 +61,7 @@ taintedLocal(id, blk, "perm", stack) :- branch(_, __, blk_src, blk, ___, ____),
                                         taintedLocal(id, blk_src, "perm", stack).
 taintedLocal(id, blk, "perm", stack) :- branch(_, __, blk_src, ___, blk, ____),
                                         taintedLocal(id, blk_src, "perm", stack).
+taintedLocal(id, blk, "perm", stack) :- jump(_, blk_src, __, blk),
+                                        taintedLocal(id, blk_src, "perm", stack).
 
 #endif
