@@ -5,16 +5,14 @@
 
 // Getting guards
 argTaint(blk, stack) :- return(_, blk_src),
-                        jump(id_jump, __, blk_fn, blk),
+                        jump(id_jump, _, blk_fn, blk),
                         blockFollows(blk_src, blk_fn),
-                        argTaint(blk_src, [id_jump, stack]),
-                        depth(stack, num),
-                        num < 2.
-argTaint(blk, stack) :- return(_, blk_src),
-                        jump(__, ___, blk_fn, blk),
-                        blockFollows(blk_src, blk_fn),
-                        validBlkStack(blk, stack),
-                        depth(stack, 2).
+                        (argTaint(blk_src, [id_jump, stack]),
+                         depth(stack, num),
+                         num < 2
+                         ;
+                         validBlkStack(blk, stack),
+                         depth(stack, 2)).
 
 // Getting guards
 notGuard(id, stack) :- transferArgument(id_return, id_src, idx),
@@ -22,16 +20,12 @@ notGuard(id, stack) :- transferArgument(id_return, id_src, idx),
                        return(id_return, blk_src),
                        jump(id_jump, _, blk_fn, blk),
                        blockFollows(blk_src, blk_fn),
-                       notGuard(id_src, [id_jump, stack]),
-                       depth(stack, num),
-                       num < 2.
-notGuard(id, stack) :- transferArgument(id_return, _, idx),
-                       argument(id, blk, idx),
-                       return(id_return, blk_src),
-                       jump(__, ___, blk_fn, blk),
-                       blockFollows(blk_src, blk_fn),
-                       validIdStack(id, stack),
-                       depth(stack, 2).
+                       (notGuard(id_src, [id_jump, stack]),
+                        depth(stack, num),
+                        num < 2
+                        ;
+                        validIdStack(id, stack),
+                        depth(stack, 2)).
 
 // Getting local taints
 taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),
@@ -39,30 +33,26 @@ taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),
                                      return(id_return, blk_src),
                                      jump(id_jump, _, blk_fn, blk),
                                      blockFollows(blk_src, blk_fn),
-                                     taintedLocal(id_src, blk_src, src, [id_jump, stack]),
-                                     depth(stack, num),
-                                     num < 2.
-taintedLocal(id, blk, "perm", stack) :- transferArgument(id_return, _, idx),
-                                        argument(id, blk, idx),
-                                        return(id_return, blk_src),
-                                        jump(__, ___, blk_fn, blk),
-                                        blockFollows(blk_src, blk_fn),
-                                        validBlkStack(blk, stack),
-                                        depth(stack, 2).
+                                     (taintedLocal(id_src, blk_src, src, [id_jump, stack]),
+                                      depth(stack, num),
+                                      num < 2
+                                      ;
+                                      src = "perm",
+                                      validBlkStack(blk, stack),
+                                      depth(stack, 2)).
 
 taintedGlobalBlkStart(field, blk, src, stack) :- return(_, blk_src),
-                                                 jump(id_jump, __, blk_fn, blk),
+                                                 jump(id_jump, _, blk_fn, blk),
                                                  blockFollows(blk_src, blk_fn),
-                                                 taintedGlobalBlkEnd(field, blk_src, src, [id_jump, stack]),
-                                                 depth(stack, num),
-                                                 num < 2.
-taintedGlobalBlkStart(field, blk, "perm", stack) :- return(_, blk_src),
-                                                    jump(__, ___, blk_fn, blk),
-                                                    blockFollows(blk_src, blk_fn),
-                                                    store(id_1, field, ____),
-                                                    store(id_2, field, _____),
-                                                    id_1 != id_2,
-                                                    validBlkStack(blk, stack),
-                                                    depth(stack, 2).
+                                                 (taintedGlobalBlkEnd(field, blk_src, src, [id_jump, stack]),
+                                                  depth(stack, num),
+                                                  num < 2
+                                                  ;
+                                                  src = "perm",
+                                                  store(id_1, field, _),
+                                                  store(id_2, field, _),
+                                                  id_1 != id_2,
+                                                  validBlkStack(blk, stack),
+                                                  depth(stack, 2)).
 
 #endif

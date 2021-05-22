@@ -4,20 +4,15 @@
 #include "declarations.dl"
 
 // Base guard definition
-notGuard(id, stack) :- const(id, "True"), validIdStack(id, stack).
-notGuard(id, stack) :- const(id, "False"), validIdStack(id, stack).
-notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
-                       compOp(op),
-                       msgSender(id_lhs),
-                       taintedLocal(id_rhs, blk, _, stack),
-                       !msgSender(id_rhs),
-                       blockStmt(blk, id).
-notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
-                       compOp(op),
-                       taintedLocal(id_lhs, blk, _, stack),
-                       !msgSender(id_lhs),
-                       msgSender(id_rhs),
-                       blockStmt(blk, id).
+notGuard(id, stack) :- (const(id, "True"); const(id, "False")),
+                       validIdStack(id, stack).
+notGuard(id, stack) :- compOp(op),
+                       msgSender(id_sender),
+                       taintedLocal(id_other, blk, _, stack),
+                       !msgSender(id_other),
+                       blockStmt(blk, id),
+                       (bop(id, id_sender, id_other, op);
+                        bop(id, id_other, id_sender, op)).
 notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
                        compOp(op),
                        !msgSender(id_lhs),
@@ -30,16 +25,11 @@ notGuard(id, stack) :- assign(id, id_var),
 notGuard(id, stack) :- uop(id, id_var, op),
                        boolOp(op),
                        notGuard(id_var, stack).
-notGuard(id, stack) :- bop(id, id_lhs, _, op),
-                       boolOp(op),
-                       notGuard(id_lhs, stack),
-                       taintedLocal(id_lhs, blk, __, stack),
-                       blockStmt(blk, id).
-notGuard(id, stack) :- bop(id, _, id_rhs, op),
-                       boolOp(op),
-                       notGuard(id_rhs, stack),
-                       taintedLocal(id_rhs, blk, __, stack),
-                       blockStmt(blk, id).
+notGuard(id, stack) :- boolOp(op),
+                       notGuard(id_var, stack),
+                       taintedLocal(id_var, blk, _, stack),
+                       blockStmt(blk, id),
+                       (bop(id, id_var, _, op); bop(id, _, id_var, op)).
 notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
                        boolOp(op),
                        notGuard(id_lhs, stack),
@@ -49,14 +39,8 @@ notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
 notGuard(id, stack) :- transferArgument(id_transfer, id_src, idx),
                        notGuard(id_src, stack),
                        argument(id, blk, idx),
-                       goto(id_transfer, _, blk).
-notGuard(id, stack) :- transferArgument(id_transfer, id_src, idx),
-                       notGuard(id_src, stack),
-                       argument(id, blk, idx),
-                       branch(id_transfer, _, __, blk, ___, ____).
-notGuard(id, stack) :- transferArgument(id_transfer, id_src, idx),
-                       notGuard(id_src, stack),
-                       argument(id, blk, idx),
-                       branch(_, id_transfer, __, ___, blk, ____).
+                       (goto(id_transfer, _, blk);
+                        branch(id_transfer, _, _, blk, _, _);
+                        branch(_, id_transfer, _, _, blk, _)).
 
 #endif

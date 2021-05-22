@@ -6,10 +6,8 @@
 // Virtual taint for tainting untrusted inputs, msg.sender, and msg.value
 argTaint(blk, nil) :- function(blk, _).
 argTaint(blk, stack) :- goto(_, blk_src, blk), argTaint(blk_src, stack).
-argTaint(blk, stack) :- branch(_, __, blk_src, blk, ___, id_cond),
-                        notGuard(id_cond, stack),
-                        argTaint(blk_src, stack).
-argTaint(blk, stack) :- branch(_, __, blk_src, ___, blk, id_cond),
+argTaint(blk, stack) :- (branch(_, _, blk_src, blk, _, id_cond);
+                         branch(_, _, blk_src, _, blk, id_cond)),
                         notGuard(id_cond, stack),
                         argTaint(blk_src, stack).
 

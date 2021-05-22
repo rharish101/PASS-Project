@@ -28,27 +28,20 @@ taintedGlobal(field, id, src, stack) :- taintedGlobal(field, id_src, src, stack)
                                         !store(id, field, _).
 
 // Pass taintedGlobal for each id for transfers
-taintedGlobalBlkStart(field, blk, "perm", stack) :- goto(_, blk_src, blk),
-                                                    taintedGlobalBlkEnd(field, blk_src, "perm", stack).
-taintedGlobalBlkStart(field, blk, "perm", stack) :- branch(_, __, blk_src, blk, ___, ____),
-                                                    taintedGlobalBlkEnd(field, blk_src, "perm", stack).
-taintedGlobalBlkStart(field, blk, "perm", stack) :- branch(_, __, blk_src, ___, blk, ____),
-                                                    taintedGlobalBlkEnd(field, blk_src, "perm", stack).
-taintedGlobalBlkStart(field, blk, "cond", stack) :- goto(_, blk_src, blk),
-                                                    taintedGlobalBlkEnd(field, blk_src, "cond", stack),
-                                                    argTaint(blk, stack).
-taintedGlobalBlkStart(field, blk, "cond", stack) :- branch(_, __, blk_src, blk, ___, ____),
-                                                    taintedGlobalBlkEnd(field, blk_src, "cond", stack),
-                                                    argTaint(blk, stack).
-taintedGlobalBlkStart(field, blk, "cond", stack) :- branch(_, __, blk_src, ___, blk, ____),
-                                                    taintedGlobalBlkEnd(field, blk_src, "cond", stack),
-                                                    argTaint(blk, stack).
+taintedGlobalBlkStart(field, blk, src, stack) :- goto(_, blk_src, blk),
+                                                 taintedGlobalBlkEnd(field, blk_src, src, stack),
+                                                 (src = "perm";
+                                                  src = "cond", argTaint(blk, stack)).
+taintedGlobalBlkStart(field, blk, src, stack) :- (branch(_, _, blk_src, blk, _, _);
+                                                  branch(_, _, blk_src, _, blk, _)),
+                                                 taintedGlobalBlkEnd(field, blk_src, src, stack),
+                                                 (src = "perm";
+                                                  src = "cond", argTaint(blk, stack)).
 
 // Save perma-taints when returning
 permaTainted(field) :- return(_, blk),
-                       taintedGlobalBlkEnd(field, blk, "perm", nil).
-permaTainted(field) :- return(_, blk),
-                       taintedGlobalBlkEnd(field, blk, "cond", nil),
-                       argTaint(blk, nil).
+                       taintedGlobalBlkEnd(field, blk, src, nil),
+                       (src = "perm";
+                        src = "cond", argTaint(blk, stack)).
 
 #endif

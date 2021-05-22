@@ -4,32 +4,23 @@
 #include "../declarations.dl"
 
 // For untrusted inputs, msg.sender, and msg.value
-taintedLocal(id, blk, "cond", nil) :- argument(id, blk, _), function(blk, __).
+taintedLocal(id, blk, "cond", nil) :- argument(id, blk, _), function(blk, _).
 taintedLocal(id, blk, "cond", nil) :- msgComponent(id), argTaint(blk, nil).
 
 // For expressions
-taintedLocal(id, blk, src, stack) :- assign(id, id_var),
-                                     taintedLocal(id_var, blk, src, stack).
-taintedLocal(id, blk, src, stack) :- uop(id, id_var, _),
-                                     taintedLocal(id_var, blk, src, stack).
-taintedLocal(id, blk, src, stack) :- bop(id, id_lhs, _, _),
-                                     taintedLocal(id_lhs, blk, src, stack).
-taintedLocal(id, blk, src, stack) :- bop(id, _, id_rhs, _),
-                                     taintedLocal(id_rhs, blk, src, stack).
+taintedLocal(id, blk, src, stack) :- taintedLocal(id_var, blk, src, stack),
+                                     (assign(id, id_var);
+                                      uop(id, id_var, _);
+                                      bop(id, id_var, _, _);
+                                      bop(id, _, id_var, _)).
 
 // For argument combinations
 taintedLocal(id, blk, src, stack) :- transferArgument(id_transfer, id_src, idx),
                                      taintedLocal(id_src, blk_src, src, stack),
                                      argument(id, blk, idx),
-                                     goto(id_transfer, blk_src, blk).
-taintedLocal(id, blk, src, stack) :- transferArgument(id_transfer, id_src, idx),
-                                     taintedLocal(id_src, blk_src, src, stack),
-                                     argument(id, blk, idx),
-                                     branch(id_transfer, _, blk_src, blk, __, ___).
-taintedLocal(id, blk, src, stack) :- transferArgument(id_transfer, id_src, idx),
-                                     taintedLocal(id_src, blk_src, src, stack),
-                                     argument(id, blk, idx),
-                                     branch(_, id_transfer, blk_src, __, blk, ___).
+                                     (goto(id_transfer, blk_src, blk);
+                                      branch(id_transfer, _, blk_src, blk, _, _);
+                                      branch(_, id_transfer, blk_src, _, blk, _)).
 
 // For taints through loads
 taintedLocal(id, blk, src, stack) :- load(id, field),
@@ -37,25 +28,12 @@ taintedLocal(id, blk, src, stack) :- load(id, field),
                                      taintedGlobal(field, id, src, stack).
 
 // Pass taints around blocks
-taintedLocal(id, blk, "cond", stack) :- goto(_, blk_src, blk),
-                                        taintedLocal(id, blk_src, "cond", stack),
-                                        argTaint(blk, stack).
-taintedLocal(id, blk, "cond", stack) :- branch(_, __, blk_src, blk, ___, ____),
-                                        taintedLocal(id, blk_src, "cond", stack),
-                                        argTaint(blk, stack).
-taintedLocal(id, blk, "cond", stack) :- branch(_, __, blk_src, ___, blk, ____),
-                                        taintedLocal(id, blk_src, "cond", stack),
-                                        argTaint(blk, stack).
-taintedLocal(id, blk, "cond", stack) :- jump(_, blk_src, __, blk),
-                                        taintedLocal(id, blk_src, "cond", stack),
-                                        argTaint(blk, stack).
-taintedLocal(id, blk, "perm", stack) :- goto(_, blk_src, blk),
-                                        taintedLocal(id, blk_src, "perm", stack).
-taintedLocal(id, blk, "perm", stack) :- branch(_, __, blk_src, blk, ___, ____),
-                                        taintedLocal(id, blk_src, "perm", stack).
-taintedLocal(id, blk, "perm", stack) :- branch(_, __, blk_src, ___, blk, ____),
-                                        taintedLocal(id, blk_src, "perm", stack).
-taintedLocal(id, blk, "perm", stack) :- jump(_, blk_src, __, blk),
-                                        taintedLocal(id, blk_src, "perm", stack).
+taintedLocal(id, blk, src, stack) :- taintedLocal(id, blk_src, src, stack),
+                                     (goto(id_transfer, blk_src, blk);
+                                      branch(id_transfer, _, blk_src, blk, _, _);
+                                      branch(_, id_transfer, blk_src, _, blk, _);
+                                      jump(_, blk_src, _, blk)),
+                                     (src = "cond", argTaint(blk, stack);
+                                      src = "perm").
 
 #endif

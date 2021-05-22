@@ -10,17 +10,17 @@ depth([id_transfer, tail], num + 1) :- depth(tail, num),
 
 // Whether a stack is valid by itself
 validStack(nil).
-validStack([id_transfer, nil]) :- jump(id_transfer, _, __, ___).
+validStack([id_transfer, nil]) :- jump(id_transfer, _, _, _).
 validStack(stack) :- stack = [id_1, [id_2, nil]],
-                     jump(id_2, _, blk_fn, __),
-                     jump(id_1, blk_src, ___, ____),
+                     jump(id_2, _, blk_fn, _),
+                     jump(id_1, blk_src, _, _),
                      blockFollows(blk_src, blk_fn).
 
 // Whether a stack is valid for a block
 validBlkStack(blk, nil) :- block(blk).
 validBlkStack(blk, stack) :- validStack(stack),
                              stack = [id_transfer, tail],
-                             jump(id_transfer, __, blk_fn, ___),
+                             jump(id_transfer, _, blk_fn, _),
                              blockFollows(blk, blk_fn).
 
 // Whether a stack is valid for an ID

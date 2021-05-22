@@ -4,7 +4,6 @@
 #include "declarations.dl"
 
 // Prevents code duplication
-msgComponent(id) :- msgSender(id).
-msgComponent(id) :- msgValue(id).
+msgComponent(id) :- (msgSender(id); msgValue(id)).
 
 #endif

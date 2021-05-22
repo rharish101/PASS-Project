@@ -11,21 +11,16 @@ argTaint(blk, stack) :- jump(id_jump, blk_src, blk, _),
                         num < 3.
 
 // Taints for function args, msg.sender, msg.value
-taintedLocal(id, blk, src, stack) :- argument(id, blk, idx),
-                                     jump(id_jump, blk_src, blk, _),
-                                     transferArgument(id_jump, id_src, idx),
+taintedLocal(id, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
+                                     (transferArgument(id_jump, id_src, idx),
+                                      argument(id, blk, idx)
+                                      ;
+                                      msgComponent(id),
+                                      msgComponent(id_src)),
                                      taintedLocal(id_src, blk_src, src, tail),
                                      stack = [id_jump, tail],
                                      depth(stack, num),
                                      num < 3.
-taintedLocal(id, blk, "cond", stack) :- msgComponent(id),
-                                        jump(id_jump, blk_src, _, __),
-                                        msgComponent(id_src),
-                                        taintedLocal(id_src, blk_src, "cond", tail),
-                                        argTaint(blk, stack),
-                                        stack = [id_jump, tail],
-                                        depth(stack, num),
-                                        num < 3.
 
 // Taints for global vars always match the taint source
 taintedGlobalBlkStart(field, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
@@ -36,7 +31,7 @@ taintedGlobalBlkStart(field, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
 
 // Pass around guards
 notGuard(id, stack) :- argument(id, blk_fn, idx),
-                       jump(id_jump, _, blk_fn, __),
+                       jump(id_jump, _, blk_fn, _),
                        transferArgument(id_jump, id_src, idx),
                        notGuard(id_src, tail),
                        stack = [id_jump, tail],
