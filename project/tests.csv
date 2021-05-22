@@ -101,3 +101,4 @@ preliminary,41,Safe
 preliminary,42,Tainted
 locals,multiple-selfdestruct,Safe
 locals,taint-passing-after-transfer-arg,Tainted
+locals,notguard-across-blks,Safe
