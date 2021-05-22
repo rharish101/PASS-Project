@@ -4,43 +4,35 @@
 #include "declarations.dl"
 
 // Base guard definition
-notGuard(id, stack) :- (const(id, "True"); const(id, "False")),
-                       validIdStack(id, stack).
-notGuard(id, stack) :- compOp(op),
-                       msgSender(id_sender),
-                       taintedLocal(id_other, blk, _, stack),
-                       !msgSender(id_other),
-                       blockStmt(blk, id),
-                       (bop(id, id_sender, id_other, op);
-                        bop(id, id_other, id_sender, op)).
-notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
-                       compOp(op),
-                       !msgSender(id_lhs),
-                       !msgSender(id_rhs),
-                       validIdStack(id, stack).
+notGuard(id, blk, stack) :- noMsgSender(id, stack),
+                            validBlkStack(blk, stack).
+notGuard(id, blk, stack) :- taintedLocal(id, blk, src, stack),
+                            (src = "cond"; src = "perm").
 
-// Combination of guards within a require/if-else
-notGuard(id, stack) :- assign(id, id_var),
-                       notGuard(id_var, stack).
-notGuard(id, stack) :- uop(id, id_var, op),
-                       boolOp(op),
-                       notGuard(id_var, stack).
-notGuard(id, stack) :- boolOp(op),
-                       notGuard(id_var, stack),
-                       taintedLocal(id_var, blk, _, stack),
-                       blockStmt(blk, id),
-                       (bop(id, id_var, _, op); bop(id, _, id_var, op)).
-notGuard(id, stack) :- bop(id, id_lhs, id_rhs, op),
-                       boolOp(op),
-                       notGuard(id_lhs, stack),
-                       notGuard(id_rhs, stack).
+// Base case
+noMsgSender(id, nil) :- argument(id, blk, _), function(blk, _).
+noMsgSender(id, stack) :- validIdStack(id, stack),
+                          (const(id, _);
+                           builtinVariable(id, name), name != "SENDER").
+
+// For expressions
+noMsgSender(id, stack) :- noMsgSender(id_var, stack),
+                          (assign(id, id_var);
+                           uop(id, id_var, _)).
+noMsgSender(id, stack) :- bop(id, id_lhs, id_rhs, _),
+                          noMsgSender(id_lhs, stack),
+                          noMsgSender(id_rhs, stack).
 
 // For argument combinations
-notGuard(id, stack) :- transferArgument(id_transfer, id_src, idx),
-                       notGuard(id_src, stack),
-                       argument(id, blk, idx),
-                       (goto(id_transfer, _, blk);
-                        branch(id_transfer, _, _, blk, _, _);
-                        branch(_, id_transfer, _, _, blk, _)).
+noMsgSender(id, stack) :- transferArgument(id_transfer, id_src, idx),
+                          noMsgSender(id_src, stack),
+                          argument(id, blk, idx),
+                          (goto(id_transfer, _, blk);
+                           branch(id_transfer, _, _, blk, _, _);
+                           branch(_, id_transfer, _, _, blk, _)).
+
+// For loads
+// TODO: Handle globals properly
+noMsgSender(id, stack) :- load(id, _), validIdStack(id, stack).
 
 #endif

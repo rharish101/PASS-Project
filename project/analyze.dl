@@ -129,8 +129,6 @@ msgValue(id) :- builtinVariable(id, "VALUE").
 // Definitions used for taint tracking
 #include "datalog/call_stack.dl"
 #include "datalog/guards.dl"
-#include "datalog/msg_components.dl"
-#include "datalog/operations.dl"
 #include "datalog/tracking.dl"
 
 // Definitions for the actual taint tracking

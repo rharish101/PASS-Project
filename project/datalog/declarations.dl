@@ -1,11 +1,6 @@
 #ifndef CUSTOM_DECLARATIONS
 #define CUSTOM_DECLARATIONS
 
-.decl msgComponent(id: SSA)  // common for msg.sender and msg.value
-
-.decl boolOp(op: Name)  // for operations on boolean values
-.decl compOp(op: Name)  // for comparison operations
-
 // For the call stack of functions
 .type CallStack = [head: Transfer, tail: CallStack]
 .decl depth(stack: CallStack, num: number)
@@ -16,8 +11,9 @@
 .decl validIdStack(id: SSA, stack: CallStack)          // stack with a statement
 
 // For taint flow depending on guards
-.decl argTaint(id_block: Block, stack: CallStack) // taints of arguments/msg.sender/msg.value
-.decl notGuard(id: SSA, stack: CallStack)         // can't use guard, because datalog doesn't like negation loops
+.decl argTaint(id_block: Block, stack: CallStack)          // taints of arguments/msg.sender/msg.value
+.decl notGuard(id: SSA, id_block: Block, stack: CallStack) // can't use guard, because datalog doesn't like negation loops
+.decl noMsgSender(id: SSA, stack: CallStack)               // can't use taintedLocal, because datalog doesn't like negation loops
 
 // Taint tracking
 .decl taintedLocal(id: SSA, id_block: Block, src: Name, stack: CallStack) // local vars and args

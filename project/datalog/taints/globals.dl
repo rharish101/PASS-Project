@@ -33,12 +33,12 @@ taintedGlobalBlkStart(field, blk, src, stack) :- (goto(_, blk_src, blk);
                                                   branch(_, _, blk_src, _, blk, _)),
                                                  taintedGlobalBlkEnd(field, blk_src, src, stack),
                                                  (src = "perm";
-                                                  src = "cond", argTaint(blk, stack)).
+                                                  src != "perm", argTaint(blk, stack)).
 
 // Save perma-taints when returning
 permaTainted(field) :- return(_, blk),
                        taintedGlobalBlkEnd(field, blk, src, nil),
                        (src = "perm";
-                        src = "cond", argTaint(blk, stack)).
+                        src != "perm", argTaint(blk, stack)).
 
 #endif
