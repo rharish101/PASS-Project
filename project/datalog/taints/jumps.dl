@@ -11,21 +11,13 @@ argTaint(blk, stack) :- jump(id_jump, blk_src, blk, _),
                         num < 3.
 
 // Taints for function args, msg.sender, msg.value
-taintedLocal(id, blk, "cond", stack) :- argument(id, blk_fn, idx),
-                                        jump(id_jump, blk_src, blk_fn, _),
-                                        transferArgument(id_jump, id_src, idx),
-                                        taintedLocal(id_src, blk_src, "cond", tail),
-                                        argTaint(blk, stack),
-                                        stack = [id_jump, tail],
-                                        depth(stack, num),
-                                        num < 3.
-taintedLocal(id, blk, "perm", stack) :- argument(id, blk, idx),
-                                        jump(id_jump, blk_src, blk, _),
-                                        transferArgument(id_jump, id_src, idx),
-                                        taintedLocal(id_src, blk_src, "perm", tail),
-                                        stack = [id_jump, tail],
-                                        depth(stack, num),
-                                        num < 3.
+taintedLocal(id, blk, src, stack) :- argument(id, blk, idx),
+                                     jump(id_jump, blk_src, blk, _),
+                                     transferArgument(id_jump, id_src, idx),
+                                     taintedLocal(id_src, blk_src, src, tail),
+                                     stack = [id_jump, tail],
+                                     depth(stack, num),
+                                     num < 3.
 taintedLocal(id, blk, "cond", stack) :- msgComponent(id),
                                         jump(id_jump, blk_src, _, __),
                                         msgComponent(id_src),
