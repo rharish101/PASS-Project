@@ -28,11 +28,8 @@ taintedGlobal(field, id, src, stack) :- taintedGlobal(field, id_src, src, stack)
                                         !store(id, field, _).
 
 // Pass taintedGlobal for each id for transfers
-taintedGlobalBlkStart(field, blk, src, stack) :- goto(_, blk_src, blk),
-                                                 taintedGlobalBlkEnd(field, blk_src, src, stack),
-                                                 (src = "perm";
-                                                  src = "cond", argTaint(blk, stack)).
-taintedGlobalBlkStart(field, blk, src, stack) :- (branch(_, _, blk_src, blk, _, _);
+taintedGlobalBlkStart(field, blk, src, stack) :- (goto(_, blk_src, blk);
+                                                  branch(_, _, blk_src, blk, _, _);
                                                   branch(_, _, blk_src, _, blk, _)),
                                                  taintedGlobalBlkEnd(field, blk_src, src, stack),
                                                  (src = "perm";
