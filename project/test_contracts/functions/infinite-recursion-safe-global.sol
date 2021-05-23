@@ -5,8 +5,8 @@ pragma solidity ^0.5.0;
 contract Contract {
   address payable owner;
   function foo() public {
-    int x = 0xDEADBEEF;
+    owner = address(0xDEADBEEF);
     foo();
-    selfdestruct(address(x));  // safe
+    selfdestruct(owner);  // safe
   }
 }
