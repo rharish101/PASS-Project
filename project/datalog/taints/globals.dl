@@ -39,6 +39,6 @@ taintedGlobalBlkStart(field, blk, src, stack) :- (goto(_, blk_src, blk);
 permaTainted(field) :- return(_, blk),
                        taintedGlobalBlkEnd(field, blk, src, nil),
                        (src = "perm";
-                        src != "perm", argTaint(blk, stack)).
+                        src != "perm", argTaint(blk, nil)).
 
 #endif
