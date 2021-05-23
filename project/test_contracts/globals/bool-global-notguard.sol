@@ -7,6 +7,7 @@ contract Contract {
   bool y;
   function foo() public {
     y = owner == owner;
+    if (true) {}
     require(y);                // not guard
     selfdestruct(msg.sender);  // vulnerable
   }
