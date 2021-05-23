@@ -12,7 +12,8 @@ noMsgSenderGlobal(field, id, stack) :- noMsgSenderGlobalBlkStart(field, blk, sta
                                        firstStmt(id, blk),
                                        !store(id, field, _).
 noMsgSenderGlobalBlkEnd(field, blk, stack) :- noMsgSenderGlobal(field, id, stack),
-                                              lastStmt(id, blk).
+                                              lastStmt(id, blk),
+                                              !selfdestruct(id, _).
 noMsgSenderGlobalBlkEnd(field, blk, stack) :- noMsgSenderGlobalBlkStart(field, blk, stack),
                                               !notEmptyBlock(blk).
 
@@ -23,7 +24,8 @@ noMsgSenderGlobal(field, id, stack) :- store(id, field, id_var),
 // Pass noMsgSenderGlobal b/w statements
 noMsgSenderGlobal(field, id, stack) :- noMsgSenderGlobal(field, id_src, stack),
                                        follows(id, id_src),
-                                       !store(id, field, _).
+                                       !store(id, field, _),
+                                       !selfdestruct(id_src, _).
 
 // Pass noMsgSenderGlobal for each id for transfers
 noMsgSenderGlobalBlkStart(field, blk, stack) :- (goto(_, blk_src, blk);

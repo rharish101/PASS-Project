@@ -5,7 +5,12 @@
 
 // Virtual taint for tainting untrusted inputs, msg.sender, and msg.value
 argTaint(blk, nil) :- function(blk, _).
-argTaint(blk, stack) :- goto(_, blk_src, blk), argTaint(blk_src, stack).
+argTaint(blk, stack) :- goto(_, blk_src, blk),
+                        argTaint(blk_src, stack),
+                        (!notEmptyBlock(blk_src)
+                         ;
+                         lastStmt(id_destroy, blk_src),
+                         !selfdestruct(id_destroy, _)).
 argTaint(blk, stack) :- (branch(_, _, blk_src, blk, _, id_cond);
                          branch(_, _, blk_src, _, blk, id_cond)),
                         notGuard(id_cond, blk_src, stack),

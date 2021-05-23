@@ -19,6 +19,10 @@ taintedLocal(id, blk, src, stack) :- taintedLocal(id_var, blk, src, stack),
 taintedLocal(id, blk, src, stack) :- transferArgument(id_transfer, id_src, idx),
                                      taintedLocal(id_src, blk_src, src, stack),
                                      argument(id, blk, idx),
+                                     (!notEmptyBlock(blk_src)
+                                      ;
+                                      lastStmt(id_destroy, blk_src),
+                                      !selfdestruct(id_destroy, _)),
                                      (goto(id_transfer, blk_src, blk);
                                       branch(id_transfer, _, blk_src, blk, _, _);
                                       branch(_, id_transfer, blk_src, _, blk, _)).
@@ -30,6 +34,10 @@ taintedLocal(id, blk, src, stack) :- load(id, field),
 
 // Pass taints around blocks
 taintedLocal(id, blk, src, stack) :- taintedLocal(id, blk_src, src, stack),
+                                     (lastStmt(id_destroy, blk_src),
+                                      !selfdestruct(id_destroy, _)
+                                      ;
+                                      !notEmptyBlock(blk_src)),
                                      (goto(id_transfer, blk_src, blk);
                                       branch(id_transfer, _, blk_src, blk, _, _);
                                       branch(_, id_transfer, blk_src, _, blk, _);

@@ -8,7 +8,8 @@ taintedGlobal(field, id, src, stack) :- taintedGlobalBlkStart(field, blk, src, s
                                         firstStmt(id, blk),
                                         !store(id, field, _).
 taintedGlobalBlkEnd(field, blk, src, stack) :- taintedGlobal(field, id, src, stack),
-                                               lastStmt(id, blk).
+                                               lastStmt(id, blk),
+                                               !selfdestruct(id, _).
 taintedGlobalBlkEnd(field, blk, src, stack) :- taintedGlobalBlkStart(field, blk, src, stack),
                                                !notEmptyBlock(blk).
 
@@ -25,7 +26,8 @@ taintedGlobalBlkStart(field, blk, "perm", stack) :- permaTainted(field),
 // Pass taintedGlobal b/w statements
 taintedGlobal(field, id, src, stack) :- taintedGlobal(field, id_src, src, stack),
                                         follows(id, id_src),
-                                        !store(id, field, _).
+                                        !store(id, field, _),
+                                        !selfdestruct(id_src, _).
 
 // Pass taintedGlobal for each id for transfers
 taintedGlobalBlkStart(field, blk, src, stack) :- (goto(_, blk_src, blk);
