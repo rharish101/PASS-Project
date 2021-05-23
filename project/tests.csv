@@ -105,3 +105,6 @@ locals,taint-passing-after-transfer-arg,Tainted
 locals,notguard-across-blks,Safe
 locals,selfdestruct-bad-blk-join,Safe
 functions,local-perm-taint-passing-after-fn-call,Tainted
+globals,bool-global-guard,Safe
+functions,guard-global-func-call,Safe
+functions,notguard-global-func-call,Tainted
