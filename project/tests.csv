@@ -104,3 +104,4 @@ preliminary,42,Tainted
 locals,multiple-selfdestruct,Safe
 locals,taint-passing-after-transfer-arg,Tainted
 locals,notguard-across-blks,Safe
+locals,selfdestruct-bad-blk-join,Safe
