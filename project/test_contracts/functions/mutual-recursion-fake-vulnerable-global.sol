@@ -10,7 +10,8 @@ contract Contract {
   }
 
   function bar() public {
-    owner = owner;
+    owner = msg.sender;  // tainted
+    owner = address(0xDEADBEEF);  // clean
     foo();
   }
 }
