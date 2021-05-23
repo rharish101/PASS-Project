@@ -5,8 +5,10 @@ pragma solidity ^0.5.0;
 contract Contract {
   address payable owner;
   function foo(int x) public returns (int) {
-    int y = bar(x);
-    selfdestruct(address(y));  // vulnerable
+    if (x > 3) {
+      int y = bar(x - 1);
+      selfdestruct(address(y));  // vulnerable
+    }
     return x;
   }
 

@@ -6,7 +6,9 @@ contract Contract {
   address payable owner;
   function foo(int x) public {
     owner = address(x);
-    foo(x);
-    selfdestruct(owner);  // vulnerable
+    if (x > 3) {
+      foo(x - 1);
+      selfdestruct(owner);  // vulnerable
+    }
   }
 }

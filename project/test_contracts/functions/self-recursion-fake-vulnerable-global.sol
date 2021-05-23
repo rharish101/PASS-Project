@@ -4,10 +4,12 @@ pragma solidity ^0.5.0;
 // the output of your analyzer should be Tainted
 contract Contract {
   address payable owner;
-  function foo() public {
+  function foo(int x) public {
     owner = msg.sender;  // tainted
     owner = address(0xDEADBEEF);  // clean
-    foo();
-    selfdestruct(owner);  // safe
+    if (x > 3) {
+      foo(x - 1);
+      selfdestruct(owner);  // safe
+    }
   }
 }
