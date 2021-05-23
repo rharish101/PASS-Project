@@ -8,8 +8,6 @@ By default runs on all contracts.
     -c, --colour    Force coloured output
 EOS
 
-TESTS_CSV="tests.csv"
-
 if [ -t 1 ]; then
     is_terminal=true
 else
@@ -78,41 +76,47 @@ total=0
 score=0
 max_score=0
 
-while IFS=$'\n' read line; do
-    while IFS=, read -r folder num expected; do
-        test_path="test_contracts/$folder/$num.sol"
-        should_run "$test_path" || continue
+shopt -s globstar
+test_paths="$(ls test_contracts/**/*.sol | sort)"
 
-        ((total+=1))
-        if [[ "$expected" == "Safe" ]]; then
-            ((max_score+=1))
-        fi
+IFS=$'\n'
+for test_path in $test_paths; do
+    should_run "$test_path" || continue
+    expected="$(awk 'NR==4 {print $NF}' < "$test_path")"
 
-        out="$(python analyze.py "$test_path")"
-        if [[ "$out" != "$expected" ]]; then
-            echo "$folder/$num.sol $(colour red failed): Got $out, expected $expected"
-            ((failed+=1))
+    ((total+=1))
+    if [[ "$expected" == "Safe" ]]; then
+        ((max_score+=1))
+    fi
 
-            if [[ "$out" == "Safe" ]]; then
-                # out=Safe, expected=Tainted --> Unsound!
-                ((unsound+=1))
-                ((score-=2))
-            elif [[ "$out" == "Tainted" ]]; then
-                # out=Tainted, expected=Safe --> Imprecise!
-                ((imprecise+=1))
-            else
-                # Unknown output!
-                ((unknown+=1))
-            fi
+    folder="$(dirname "$test_path")"
+    name="$(basename "$test_path")"
+
+    out="$(python analyze.py "$test_path" | sed 's/^\s*//;s/\s*$//')"
+    if [[ "$out" != "$expected" ]]; then
+        echo "$folder/$name $(colour red failed): Got $out, expected $expected"
+        ((failed+=1))
+
+        if [[ "$out" == "Safe" ]]; then
+            # out=Safe, expected=Tainted --> Unsound!
+            ((unsound+=1))
+            ((score-=2))
+        elif [[ "$out" == "Tainted" ]]; then
+            # out=Tainted, expected=Safe --> Imprecise!
+            ((imprecise+=1))
         else
-            echo "$folder/$num.sol $(colour green worked)"
-            ((clean+=1))
-            if [[ "$out" == "Safe" ]]; then
-                ((score+=1))
-            fi
+            # Unknown output!
+            ((unknown+=1))
         fi
-    done <<< "$line"
-done < "$TESTS_CSV"
+    else
+        echo "$folder/$name $(colour green worked)"
+        ((clean+=1))
+        if [[ "$out" == "Safe" ]]; then
+            ((score+=1))
+        fi
+    fi
+done
+unset IFS
 
 # Summary
 read -r -d '' summary <<EOS
