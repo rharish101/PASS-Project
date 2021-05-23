@@ -15,17 +15,28 @@ argTaint(blk, stack) :- return(_, blk_src),
                          depth(stack, 2)).
 
 // Getting guards
-notGuard(id, stack) :- transferArgument(id_return, id_src, idx),
-                       argument(id, blk, idx),
-                       return(id_return, blk_src),
-                       jump(id_jump, _, blk_fn, blk),
-                       blockFollows(blk_src, blk_fn),
-                       (notGuard(id_src, [id_jump, stack]),
-                        depth(stack, num),
-                        num < 2
-                        ;
-                        validIdStack(id, stack),
-                        depth(stack, 2)).
+noMsgSenderLocal(id, stack) :- transferArgument(id_return, id_src, idx),
+                               argument(id, blk, idx),
+                               return(id_return, blk_src),
+                               jump(id_jump, _, blk_fn, blk),
+                               blockFollows(blk_src, blk_fn),
+                               (noMsgSenderLocal(id_src, [id_jump, stack]),
+                                depth(stack, num),
+                                num < 2
+                                ;
+                                validIdStack(id, stack),
+                                depth(stack, 2)).
+
+noMsgSenderGlobalBlkStart(field, blk, stack) :- return(_, blk_src),
+                                                jump(id_jump, _, blk_fn, blk),
+                                                blockFollows(blk_src, blk_fn),
+                                                (noMsgSenderGlobalBlkEnd(field, blk_src, [id_jump, stack]),
+                                                 depth(stack, num),
+                                                 num < 2
+                                                 ;
+                                                 store(_, field, _),
+                                                 validBlkStack(blk, stack),
+                                                 depth(stack, 2)).
 
 // Getting local taints
 taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),

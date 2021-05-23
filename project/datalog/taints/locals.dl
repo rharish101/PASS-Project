@@ -5,7 +5,8 @@
 
 // For untrusted inputs, msg.sender, and msg.value
 taintedLocal(id, blk, "cond", nil) :- argument(id, blk, _), function(blk, _).
-taintedLocal(id, blk, "cond", nil) :- msgComponent(id), argTaint(blk, nil).
+taintedLocal(id, blk, "cond", nil) :- msgValue(id), argTaint(blk, nil).
+taintedLocal(id, blk, "send", nil) :- msgSender(id), argTaint(blk, nil).
 
 // For expressions
 taintedLocal(id, blk, src, stack) :- taintedLocal(id_var, blk, src, stack),
@@ -33,7 +34,7 @@ taintedLocal(id, blk, src, stack) :- taintedLocal(id, blk_src, src, stack),
                                       branch(id_transfer, _, blk_src, blk, _, _);
                                       branch(_, id_transfer, blk_src, _, blk, _);
                                       jump(_, blk_src, _, blk)),
-                                     (src = "cond", argTaint(blk, stack);
+                                     (src != "perm", argTaint(blk, stack);
                                       src = "perm").
 
 #endif

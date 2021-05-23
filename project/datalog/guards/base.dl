@@ -1,0 +1,12 @@
+#ifndef GUARDS
+#define GUARDS
+
+#include "../declarations.dl"
+
+// Base guard definition
+notGuard(id, blk, stack) :- noMsgSenderLocal(id, stack),
+                            validBlkStack(blk, stack).
+notGuard(id, blk, stack) :- taintedLocal(id, blk, src, stack),
+                            (src = "cond"; src = "perm").
+
+#endif
