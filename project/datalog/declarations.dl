@@ -1,12 +1,10 @@
 #ifndef CUSTOM_DECLARATIONS
 #define CUSTOM_DECLARATIONS
 
-// Keep this here so that every file gets it
-#define MAX_DEPTH 3
-
 // For the call stack of functions
 .type CallStack = [head: Transfer, tail: CallStack]
 .decl depth(stack: CallStack, num: number)
+#define MAX_DEPTH 3                                 // keep this here so that every file gets it
 
 // Checking validitiy of a stack
 .decl validStack(stack: CallStack)                     // stack by itself
