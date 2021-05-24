@@ -77,7 +77,7 @@ score=0
 max_score=0
 
 shopt -s globstar
-test_paths="$(ls test_contracts/**/*.sol | sort)"
+test_paths="$(ls test_contracts/**/*.sol | sort -V)"
 
 IFS=$'\n'
 for test_path in $test_paths; do
@@ -89,12 +89,12 @@ for test_path in $test_paths; do
         ((max_score+=1))
     fi
 
-    folder="$(dirname "$test_path")"
-    name="$(basename "$test_path")"
+    folder="$(basename $(dirname "$test_path"))"
+    name="$folder/$(basename "$test_path")"
 
     out="$(python analyze.py "$test_path" | sed 's/^\s*//;s/\s*$//')"
     if [[ "$out" != "$expected" ]]; then
-        echo "$folder/$name $(colour red failed): Got $out, expected $expected"
+        echo "$name $(colour red failed): Got $out, expected $expected"
         ((failed+=1))
 
         if [[ "$out" == "Safe" ]]; then
@@ -109,7 +109,7 @@ for test_path in $test_paths; do
             ((unknown+=1))
         fi
     else
-        echo "$folder/$name $(colour green worked)"
+        echo "$name $(colour green worked)"
         ((clean+=1))
         if [[ "$out" == "Safe" ]]; then
             ((score+=1))
@@ -118,8 +118,13 @@ for test_path in $test_paths; do
 done
 unset IFS
 
+if (( total == 0 )); then
+    echo "No tests run"
+    exit 0
+fi
+
 # Summary
-read -r -d '' summary <<EOS
+echo "\
 ==================================================
 
 Test summary
@@ -135,9 +140,7 @@ Total score: ${score}/${max_score}
 
 ==================================================
 
-Conclusion:
-EOS
-echo "$summary"
+Conclusion:"
 
 # Conclusion
 if (( failed == 0 )); then
