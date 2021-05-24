@@ -23,8 +23,8 @@ noMsgSenderLocal(id, stack) :- transferArgument(id_transfer, id_src, idx),
                                argument(id, blk, idx),
                                (!notEmptyBlock(blk_src)
                                 ;
-                                lastStmt(id_destroy, blk_src),
-                                !selfdestruct(id_destroy, _)),
+                                lastStmt(id_last, blk_src),
+                                !selfdestruct(id_last, _)),
                                (goto(id_transfer, blk_src, blk);
                                 branch(id_transfer, _, blk_src, blk, _, _);
                                 branch(_, id_transfer, blk_src, _, blk, _)).
