@@ -11,10 +11,13 @@ depth([id_transfer, tail], num + 1) :- depth(tail, num),
 // Whether a stack is valid by itself
 validStack(nil).
 validStack([id_transfer, nil]) :- jump(id_transfer, _, _, _).
-validStack(stack) :- stack = [id_1, [id_2, nil]],
+validStack(stack) :- stack = [id_1, [id_2, tail]],
                      jump(id_2, _, blk_fn, _),
                      jump(id_1, blk_src, _, _),
-                     blockFollows(blk_src, blk_fn).
+                     blockFollows(blk_src, blk_fn),
+                     validStack([id_2, tail]),
+                     depth([id_2, tail], num),
+                     num < MAX_DEPTH - 1.
 
 // Whether a stack is valid for a block
 validBlkStack(blk, nil) :- block(blk).

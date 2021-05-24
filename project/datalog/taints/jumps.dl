@@ -8,7 +8,7 @@ argTaint(blk, stack) :- jump(id_jump, blk_src, blk, _),
                         argTaint(blk_src, tail),
                         stack = [id_jump, tail],
                         depth(stack, num),
-                        num < 3.
+                        num < MAX_DEPTH.
 
 // Taints for function args, msg.sender, msg.value
 taintedLocal(id, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
@@ -23,14 +23,14 @@ taintedLocal(id, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
                                      taintedLocal(id_src, blk_src, src, tail),
                                      stack = [id_jump, tail],
                                      depth(stack, num),
-                                     num < 3.
+                                     num < MAX_DEPTH.
 
 // Taints for global vars always match the taint source
 taintedGlobalBlkStart(field, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
                                                  taintedGlobalBlkEnd(field, blk_src, src, tail),
                                                  stack = [id_jump, tail],
                                                  depth(stack, num),
-                                                 num < 3.
+                                                 num < MAX_DEPTH.
 
 // Pass around msg.sender presence
 noMsgSenderLocal(id, stack) :- argument(id, blk_fn, idx),
@@ -39,11 +39,11 @@ noMsgSenderLocal(id, stack) :- argument(id, blk_fn, idx),
                                noMsgSenderLocal(id_src, tail),
                                stack = [id_jump, tail],
                                depth(stack, num),
-                               num < 3.
+                               num < MAX_DEPTH.
 noMsgSenderGlobalBlkStart(field, blk, stack) :- jump(id_jump, blk_src, blk, _),
                                                 noMsgSenderGlobalBlkEnd(field, blk_src, tail),
                                                 stack = [id_jump, tail],
                                                 depth(stack, num),
-                                                num < 3.
+                                                num < MAX_DEPTH.
 
 #endif
