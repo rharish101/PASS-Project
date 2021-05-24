@@ -7,6 +7,8 @@
 argTaint(blk, stack) :- return(_, blk_src),
                         jump(id_jump, _, blk_fn, blk),
                         blockFollows(blk_src, blk_fn),
+                        (lastStmt(id_last, blk_src), !selfdestruct(id_last, _);
+                         !notEmptyBlock(blk_src)),
                         (argTaint(blk_src, [id_jump, stack]),
                          depth(stack, num),
                          num < MAX_DEPTH - 1
@@ -20,6 +22,10 @@ noMsgSenderLocal(id, stack) :- transferArgument(id_return, id_src, idx),
                                return(id_return, blk_src),
                                jump(id_jump, _, blk_fn, blk),
                                blockFollows(blk_src, blk_fn),
+                               (lastStmt(id_last, blk_src),
+                                !selfdestruct(id_last, _)
+                                ;
+                                !notEmptyBlock(blk_src)),
                                (noMsgSenderLocal(id_src, [id_jump, stack]),
                                 depth(stack, num),
                                 num < MAX_DEPTH - 1
@@ -30,6 +36,10 @@ noMsgSenderLocal(id, stack) :- transferArgument(id_return, id_src, idx),
 noMsgSenderGlobalBlkStart(field, blk, stack) :- return(_, blk_src),
                                                 jump(id_jump, _, blk_fn, blk),
                                                 blockFollows(blk_src, blk_fn),
+                                                (lastStmt(id_last, blk_src),
+                                                 !selfdestruct(id_last, _)
+                                                 ;
+                                                 !notEmptyBlock(blk_src)),
                                                 (noMsgSenderGlobalBlkEnd(field, blk_src, [id_jump, stack]),
                                                  depth(stack, num),
                                                  num < MAX_DEPTH - 1
@@ -44,6 +54,10 @@ taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),
                                      return(id_return, blk_src),
                                      jump(id_jump, _, blk_fn, blk),
                                      blockFollows(blk_src, blk_fn),
+                                     (lastStmt(id_last, blk_src),
+                                      !selfdestruct(id_last, _)
+                                      ;
+                                      !notEmptyBlock(blk_src)),
                                      (taintedLocal(id_src, blk_src, src, [id_jump, stack]),
                                       depth(stack, num),
                                       num < MAX_DEPTH - 1
@@ -55,6 +69,10 @@ taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),
 taintedGlobalBlkStart(field, blk, src, stack) :- return(_, blk_src),
                                                  jump(id_jump, _, blk_fn, blk),
                                                  blockFollows(blk_src, blk_fn),
+                                                 (lastStmt(id_last, blk_src),
+                                                  !selfdestruct(id_last, _)
+                                                  ;
+                                                  !notEmptyBlock(blk_src)),
                                                  (taintedGlobalBlkEnd(field, blk_src, src, [id_jump, stack]),
                                                   depth(stack, num),
                                                   num < MAX_DEPTH - 1
