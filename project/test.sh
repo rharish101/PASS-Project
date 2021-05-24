@@ -8,7 +8,8 @@ By default runs on all contracts.
     -c, --colour    Force coloured output
 EOS
 
-TESTS_DIR="test_contracts"
+project_dir="$(realpath "$(dirname "$BASH_SOURCE")")"
+tests_dir="$project_dir/test_contracts"
 
 if [ -t 1 ]; then
     is_terminal=true
@@ -89,7 +90,7 @@ max_time=0
 total_time=0
 
 shopt -s globstar
-test_paths="$(ls "$TESTS_DIR"/**/*.sol | sort -V)"
+test_paths="$(ls "$tests_dir"/**/*.sol | sort -V)"
 
 IFS=$'\n'
 for test_path in $test_paths; do
@@ -101,10 +102,10 @@ for test_path in $test_paths; do
         ((max_score+=1))
     fi
 
-    name="$(realpath --relative-to="$TESTS_DIR" "$test_path")"
+    name="$(realpath --relative-to="$tests_dir" "$test_path")"
 
     start_time=$(date +"%s%N")
-    out="$(python analyze.py "$test_path" | sed 's/^\s*//;s/\s*$//')"
+    out="$(python "$project_dir/analyze.py" "$test_path" | sed 's/^\s*//;s/\s*$//')"
     end_time=$(date +"%s%N")
     curr_time=$((end_time - start_time))
 
