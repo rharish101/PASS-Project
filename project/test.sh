@@ -66,6 +66,12 @@ should_run ()
     return 1
 }
 
+ns_to_s ()
+{
+    local duration="$1"
+    printf "%.3f" $(echo "$duration / 1000000000" | bc -l)
+}
+
 clean=0
 failed=0
 imprecise=0
@@ -75,6 +81,10 @@ total=0
 
 score=0
 max_score=0
+
+min_time=$(echo "120 * 10^9" | bc -l)
+max_time=0
+total_time=0
 
 shopt -s globstar
 test_paths="$(ls test_contracts/**/*.sol | sort -V)"
@@ -92,9 +102,21 @@ for test_path in $test_paths; do
     folder="$(basename $(dirname "$test_path"))"
     name="$folder/$(basename "$test_path")"
 
+    start_time=$(date +"%s%N")
     out="$(python analyze.py "$test_path" | sed 's/^\s*//;s/\s*$//')"
+    end_time=$(date +"%s%N")
+    curr_time=$((end_time - start_time))
+
+    ((total_time+=$curr_time))
+    if (( curr_time < min_time )); then
+        min_time=$curr_time
+    fi
+    if (( curr_time > max_time )); then
+        max_time=$curr_time
+    fi
+
     if [[ "$out" != "$expected" ]]; then
-        echo "$name $(colour red failed): Got $out, expected $expected"
+        echo "$name $(colour red failed): Got $out, expected $expected - $(ns_to_s $curr_time)s"
         ((failed+=1))
 
         if [[ "$out" == "Safe" ]]; then
@@ -109,7 +131,7 @@ for test_path in $test_paths; do
             ((unknown+=1))
         fi
     else
-        echo "$name $(colour green worked)"
+        echo "$name $(colour green worked) - $(ns_to_s $curr_time)s"
         ((clean+=1))
         if [[ "$out" == "Safe" ]]; then
             ((score+=1))
@@ -137,6 +159,11 @@ ${total} test(s) run
   - ${unknown} unknown
 
 Total score: ${score}/${max_score}
+
+Minimum test time - $(ns_to_s $min_time)s
+Maximum test time - $(ns_to_s $max_time)s
+Average test time - $(ns_to_s $((total_time / total)))s
+Total test time - $(ns_to_s $total_time)s
 
 ==================================================
 
