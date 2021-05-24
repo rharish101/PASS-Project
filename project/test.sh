@@ -59,7 +59,7 @@ should_run ()
     fi
 
     for i in "${to_run[@]}"; do
-        if [[ "$test_path" == *"$i"* ]]; then
+        if [[ "$test_path" =~ $i ]]; then
             return 0;
         fi
     done
