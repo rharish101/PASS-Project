@@ -11,10 +11,10 @@ argTaint(blk, stack) :- return(_, blk_src),
                          !notEmptyBlock(blk_src)),
                         (argTaint(blk_src, [id_jump, stack]),
                          depth(stack, num),
-                         num < MAX_DEPTH - 1
+                         num < MAX_DEPTH
                          ;
                          validBlkStack(blk, stack),
-                         depth(stack, MAX_DEPTH - 1)).
+                         depth(stack, MAX_DEPTH)).
 
 // Getting guards
 noMsgSenderLocal(id, stack) :- transferArgument(id_return, id_src, idx),
@@ -28,10 +28,10 @@ noMsgSenderLocal(id, stack) :- transferArgument(id_return, id_src, idx),
                                 !notEmptyBlock(blk_src)),
                                (noMsgSenderLocal(id_src, [id_jump, stack]),
                                 depth(stack, num),
-                                num < MAX_DEPTH - 1
+                                num < MAX_DEPTH
                                 ;
                                 validIdStack(id, stack),
-                                depth(stack, MAX_DEPTH - 1)).
+                                depth(stack, MAX_DEPTH)).
 
 noMsgSenderGlobalBlkStart(field, blk, stack) :- return(_, blk_src),
                                                 jump(id_jump, _, blk_fn, blk),
@@ -42,11 +42,11 @@ noMsgSenderGlobalBlkStart(field, blk, stack) :- return(_, blk_src),
                                                  !notEmptyBlock(blk_src)),
                                                 (noMsgSenderGlobalBlkEnd(field, blk_src, [id_jump, stack]),
                                                  depth(stack, num),
-                                                 num < MAX_DEPTH - 1
+                                                 num < MAX_DEPTH
                                                  ;
                                                  store(_, field, _),
                                                  validBlkStack(blk, stack),
-                                                 depth(stack, MAX_DEPTH - 1)).
+                                                 depth(stack, MAX_DEPTH)).
 
 // Getting local taints
 taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),
@@ -60,11 +60,11 @@ taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),
                                       !notEmptyBlock(blk_src)),
                                      (taintedLocal(id_src, blk_src, src, [id_jump, stack]),
                                       depth(stack, num),
-                                      num < MAX_DEPTH - 1
+                                      num < MAX_DEPTH
                                       ;
                                       src = "perm",
                                       validBlkStack(blk, stack),
-                                      depth(stack, MAX_DEPTH - 1)).
+                                      depth(stack, MAX_DEPTH)).
 
 taintedGlobalBlkStart(field, blk, src, stack) :- return(_, blk_src),
                                                  jump(id_jump, _, blk_fn, blk),
@@ -75,10 +75,10 @@ taintedGlobalBlkStart(field, blk, src, stack) :- return(_, blk_src),
                                                   !notEmptyBlock(blk_src)),
                                                  (taintedGlobalBlkEnd(field, blk_src, src, [id_jump, stack]),
                                                   depth(stack, num),
-                                                  num < MAX_DEPTH - 1
+                                                  num < MAX_DEPTH
                                                   ;
                                                   taintedGlobal(field, _, src, _),
                                                   validBlkStack(blk, stack),
-                                                  depth(stack, MAX_DEPTH - 1)).
+                                                  depth(stack, MAX_DEPTH)).
 
 #endif

@@ -17,7 +17,7 @@ validStack(stack) :- stack = [id_1, [id_2, tail]],
                      blockFollows(blk_src, blk_fn),
                      validStack([id_2, tail]),
                      depth([id_2, tail], num),
-                     num < MAX_DEPTH - 1.
+                     num < MAX_DEPTH.
 
 // Whether a stack is valid for a block
 validBlkStack(blk, nil) :- block(blk).

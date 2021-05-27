@@ -18,6 +18,10 @@ contract Contract {
   }
 
   function c() public returns(bool) {
+    return d();
+  }
+
+  function d() public returns(bool) {
     return msg.sender == owner;
   }
 }
