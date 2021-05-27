@@ -30,6 +30,7 @@ noMsgSenderLocal(id, stack) :- transferArgument(id_return, id_src, idx),
                                 depth(stack, num),
                                 num < MAX_DEPTH
                                 ;
+                                noMsgSenderLocal(id_src, _),
                                 validIdStack(id, stack),
                                 depth(stack, MAX_DEPTH)).
 
@@ -44,7 +45,7 @@ noMsgSenderGlobalBlkStart(field, blk, stack) :- return(_, blk_src),
                                                  depth(stack, num),
                                                  num < MAX_DEPTH
                                                  ;
-                                                 store(_, field, _),
+                                                 noMsgSenderGlobalBlkEnd(field, blk_src, _),
                                                  validBlkStack(blk, stack),
                                                  depth(stack, MAX_DEPTH)).
 
