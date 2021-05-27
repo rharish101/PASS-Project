@@ -3,8 +3,7 @@
 
 // For the call stack of functions
 .type CallStack = [head: Transfer, tail: CallStack]
-.decl depth(stack: CallStack, num: number)
-#define MAX_DEPTH 3                                 // keep this here so that every file gets it
+.decl notContains(stack: CallStack, id_transfer: Transfer)
 
 // Checking validitiy of a stack
 .decl validStack(stack: CallStack)                     // stack by itself

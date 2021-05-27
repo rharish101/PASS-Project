@@ -3,10 +3,12 @@
 
 #include "declarations.dl"
 
-// Calculate depth
-depth(nil, 0).
-depth([id_transfer, tail], num + 1) :- depth(tail, num),
-                                       validStack([id_transfer, tail]).
+// To limit recursion
+notContains(nil, id_transfer) :- jump(id_transfer, _, _, _).
+notContains([id_1, tail], id_2) :- jump(id_1, _, _, _),
+                                   id_1 != id_2,
+                                   notContains(tail, id_2),
+                                   validStack(tail).
 
 // Whether a stack is valid by itself
 validStack(nil).
@@ -16,8 +18,7 @@ validStack(stack) :- stack = [id_1, [id_2, tail]],
                      jump(id_1, blk_src, _, _),
                      blockFollows(blk_src, blk_fn),
                      validStack([id_2, tail]),
-                     depth([id_2, tail], num),
-                     num < MAX_DEPTH.
+                     notContains([id_2, tail], id_1).
 
 // Whether a stack is valid for a block
 validBlkStack(blk, nil) :- block(blk).
