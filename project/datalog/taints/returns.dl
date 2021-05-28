@@ -3,18 +3,36 @@
 
 #include "../declarations.dl"
 
+// For reducing code duplication
+canReturnBlk(stack, stack_src, blk, id_jump) :- (stack_src = [id_jump, stack],
+                                                 depth(stack, num),
+                                                 num < MAX_DEPTH
+                                                 ;
+                                                 stack_src = [STACK_OVERFLOW, stack]
+                                                 ;
+                                                 stack = stack_src,
+                                                 stack_src = [STACK_OVERFLOW, tail]),
+                                                validBlkStack(blk, stack),
+                                                jump(id_jump, _, _, _).
+canReturnId(stack, stack_src, id, id_jump) :- (stack_src = [id_jump, stack],
+                                               depth(stack, num),
+                                               num < MAX_DEPTH
+                                               ;
+                                               stack_src = [STACK_OVERFLOW, stack]
+                                               ;
+                                               stack = stack_src,
+                                               stack_src = [STACK_OVERFLOW, tail]),
+                                              validIdStack(id, stack),
+                                              jump(id_jump, _, _, _).
+
 // Getting guards
 argTaint(blk, stack) :- return(_, blk_src),
                         jump(id_jump, _, blk_fn, blk),
                         blockFollows(blk_src, blk_fn),
                         (lastStmt(id_last, blk_src), !selfdestruct(id_last, _);
                          !notEmptyBlock(blk_src)),
-                        (argTaint(blk_src, [id_jump, stack]),
-                         depth(stack, num),
-                         num < MAX_DEPTH
-                         ;
-                         validBlkStack(blk, stack),
-                         depth(stack, MAX_DEPTH)).
+                        argTaint(blk_src, stack_src),
+                        canReturnBlk(stack, stack_src, blk, id_jump).
 
 // Getting guards
 noMsgSenderLocal(id, stack) :- transferArgument(id_return, id_src, idx),
@@ -26,13 +44,8 @@ noMsgSenderLocal(id, stack) :- transferArgument(id_return, id_src, idx),
                                 !selfdestruct(id_last, _)
                                 ;
                                 !notEmptyBlock(blk_src)),
-                               (noMsgSenderLocal(id_src, [id_jump, stack]),
-                                depth(stack, num),
-                                num < MAX_DEPTH
-                                ;
-                                noMsgSenderLocal(id_src, _),
-                                validIdStack(id, stack),
-                                depth(stack, MAX_DEPTH)).
+                               noMsgSenderLocal(id_src, stack_src),
+                               canReturnId(stack, stack_src, id, id_jump).
 
 noMsgSenderGlobalBlkStart(field, blk, stack) :- return(_, blk_src),
                                                 jump(id_jump, _, blk_fn, blk),
@@ -41,13 +54,8 @@ noMsgSenderGlobalBlkStart(field, blk, stack) :- return(_, blk_src),
                                                  !selfdestruct(id_last, _)
                                                  ;
                                                  !notEmptyBlock(blk_src)),
-                                                (noMsgSenderGlobalBlkEnd(field, blk_src, [id_jump, stack]),
-                                                 depth(stack, num),
-                                                 num < MAX_DEPTH
-                                                 ;
-                                                 noMsgSenderGlobalBlkEnd(field, blk_src, _),
-                                                 validBlkStack(blk, stack),
-                                                 depth(stack, MAX_DEPTH)).
+                                                noMsgSenderGlobalBlkEnd(field, blk_src, stack_src),
+                                                canReturnBlk(stack, stack_src, blk, id_jump).
 
 // Getting local taints
 taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),
@@ -59,13 +67,8 @@ taintedLocal(id, blk, src, stack) :- transferArgument(id_return, id_src, idx),
                                       !selfdestruct(id_last, _)
                                       ;
                                       !notEmptyBlock(blk_src)),
-                                     (taintedLocal(id_src, blk_src, src, [id_jump, stack]),
-                                      depth(stack, num),
-                                      num < MAX_DEPTH
-                                      ;
-                                      src = "perm",
-                                      validBlkStack(blk, stack),
-                                      depth(stack, MAX_DEPTH)).
+                                     taintedLocal(id_src, blk_src, src, stack_src),
+                                     canReturnBlk(stack, stack_src, blk, id_jump).
 
 taintedGlobalBlkStart(field, blk, src, stack) :- return(_, blk_src),
                                                  jump(id_jump, _, blk_fn, blk),
@@ -74,12 +77,7 @@ taintedGlobalBlkStart(field, blk, src, stack) :- return(_, blk_src),
                                                   !selfdestruct(id_last, _)
                                                   ;
                                                   !notEmptyBlock(blk_src)),
-                                                 (taintedGlobalBlkEnd(field, blk_src, src, [id_jump, stack]),
-                                                  depth(stack, num),
-                                                  num < MAX_DEPTH
-                                                  ;
-                                                  taintedGlobal(field, _, src, _),
-                                                  validBlkStack(blk, stack),
-                                                  depth(stack, MAX_DEPTH)).
+                                                 taintedGlobalBlkEnd(field, blk_src, src, stack_src),
+                                                 canReturnBlk(stack, stack_src, blk, id_jump).
 
 #endif

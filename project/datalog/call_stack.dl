@@ -18,12 +18,21 @@ validStack(stack) :- stack = [id_1, [id_2, tail]],
                      validStack([id_2, tail]),
                      depth([id_2, tail], num),
                      num < MAX_DEPTH.
+validStack([STACK_OVERFLOW, tail]) :- validStack(tail),
+                                      depth(tail, num),
+                                      num = MAX_DEPTH.
 
 // Whether a stack is valid for a block
 validBlkStack(blk, nil) :- block(blk).
 validBlkStack(blk, stack) :- validStack(stack),
                              stack = [id_transfer, tail],
                              jump(id_transfer, _, blk_fn, _),
+                             blockFollows(blk, blk_fn).
+validBlkStack(blk, stack) :- stack = [STACK_OVERFLOW, [id_1, tail]],
+                             validStack(stack),
+                             jump(id_1, _, _, _),
+                             jump(id_2, _, blk_fn, _),
+                             jumpFollows(id_2, id_1),
                              blockFollows(blk, blk_fn).
 
 // Whether a stack is valid for an ID

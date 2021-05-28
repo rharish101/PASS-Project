@@ -3,12 +3,23 @@
 
 #include "../declarations.dl"
 
+// For reducing code duplication
+canJump(stack, tail, id_jump) :- (stack = [id_jump, tail],
+                                  depth(stack, num),
+                                  num <= MAX_DEPTH
+                                  ;
+                                  stack = [STACK_OVERFLOW, tail],
+                                  validStack(stack)
+                                  ;
+                                  tail = stack,
+                                  stack = [STACK_OVERFLOW, tail_prev],
+                                  validStack(stack)),
+                                 jump(id_jump, _, _, _).
+
 // Keep the argument taint across calls
 argTaint(blk, stack) :- jump(id_jump, blk_src, blk, _),
                         argTaint(blk_src, tail),
-                        stack = [id_jump, tail],
-                        depth(stack, num),
-                        num <= MAX_DEPTH.
+                        canJump(stack, tail, id_jump).
 
 // Taints for function args, msg.sender, msg.value
 taintedLocal(id, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
@@ -21,29 +32,21 @@ taintedLocal(id, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
                                       msgValue(id),
                                       msgValue(id_src)),
                                      taintedLocal(id_src, blk_src, src, tail),
-                                     stack = [id_jump, tail],
-                                     depth(stack, num),
-                                     num <= MAX_DEPTH.
+                                     canJump(stack, tail, id_jump).
 
 // Taints for global vars always match the taint source
 taintedGlobalBlkStart(field, blk, src, stack) :- jump(id_jump, blk_src, blk, _),
                                                  taintedGlobalBlkEnd(field, blk_src, src, tail),
-                                                 stack = [id_jump, tail],
-                                                 depth(stack, num),
-                                                 num <= MAX_DEPTH.
+                                                 canJump(stack, tail, id_jump).
 
 // Pass around msg.sender presence
 noMsgSenderLocal(id, stack) :- argument(id, blk_fn, idx),
                                jump(id_jump, _, blk_fn, _),
                                transferArgument(id_jump, id_src, idx),
                                noMsgSenderLocal(id_src, tail),
-                               stack = [id_jump, tail],
-                               depth(stack, num),
-                               num <= MAX_DEPTH.
+                               canJump(stack, tail, id_jump).
 noMsgSenderGlobalBlkStart(field, blk, stack) :- jump(id_jump, blk_src, blk, _),
                                                 noMsgSenderGlobalBlkEnd(field, blk_src, tail),
-                                                stack = [id_jump, tail],
-                                                depth(stack, num),
-                                                num <= MAX_DEPTH.
+                                                canJump(stack, tail, id_jump).
 
 #endif

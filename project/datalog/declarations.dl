@@ -5,6 +5,7 @@
 .type CallStack = [head: Transfer, tail: CallStack]
 .decl depth(stack: CallStack, num: number)
 #define MAX_DEPTH 3                                 // keep this here so that every file gets it
+#define STACK_OVERFLOW "<so>"                       // keep this here so that every file gets it
 
 // Checking validitiy of a stack
 .decl validStack(stack: CallStack)                     // stack by itself
@@ -49,5 +50,10 @@
 // For tracking guards/taints across function returns
 .decl blockFollows(id_block_next: Block, id_block_prev: Block)
 .decl notEmptyBlock(id_block: Block)                           // can't use emptyBlock, because datalog uses existence
+.decl jumpFollows(id_next: Transfer, id_prev: Transfer)        // basically funcFollows
+
+.decl canJump(stack: CallStack, tail: CallStack, id_jump: Transfer)
+.decl canReturnBlk(stack: CallStack, tail: CallStack, id_block: Block, id_jump: Transfer)
+.decl canReturnId(stack: CallStack, tail: CallStack, id: SSA, id_jump: Transfer)
 
 #endif
