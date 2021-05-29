@@ -23,4 +23,11 @@ blockFollows(blk_next, blk_prev) :- jump(_, blk_prev, _, blk_next).
 blockFollows(blk_next, blk_prev) :- blockFollows(blk_mid, blk_prev),
                                     blockFollows(blk_next, blk_mid).
 
+// Used for deciding valid stacks after stack overflow
+jumpFollows(id_next, id_prev) :- jump(id_prev, _, blk_fn, _),
+                                 jump(id_next, blk_src, _, _),
+                                 blockFollows(blk_src, blk_fn).
+jumpFollows(id_next, id_prev) :- jumpFollows(id_mid, id_prev),
+                                 jumpFollows(id_next, id_mid).
+
 #endif
