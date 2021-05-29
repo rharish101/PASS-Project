@@ -4,9 +4,7 @@
 #include "../declarations.dl"
 
 // For reducing code duplication
-canReturnBlk(stack, stack_src, blk, id_jump) :- (stack_src = [id_jump, stack],
-                                                 depth(stack, num),
-                                                 num < MAX_DEPTH
+canReturnBlk(stack, stack_src, blk, id_jump) :- (stack_src = [id_jump, stack]
                                                  ;
                                                  stack_src = [STACK_OVERFLOW, stack]
                                                  ;
@@ -14,9 +12,7 @@ canReturnBlk(stack, stack_src, blk, id_jump) :- (stack_src = [id_jump, stack],
                                                  stack_src = [STACK_OVERFLOW, tail]),
                                                 validBlkStack(blk, stack),
                                                 jump(id_jump, _, _, _).
-canReturnId(stack, stack_src, id, id_jump) :- (stack_src = [id_jump, stack],
-                                               depth(stack, num),
-                                               num < MAX_DEPTH
+canReturnId(stack, stack_src, id, id_jump) :- (stack_src = [id_jump, stack]
                                                ;
                                                stack_src = [STACK_OVERFLOW, stack]
                                                ;

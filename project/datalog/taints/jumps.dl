@@ -4,16 +4,13 @@
 #include "../declarations.dl"
 
 // For reducing code duplication
-canJump(stack, tail, id_jump) :- (stack = [id_jump, tail],
-                                  depth(stack, num),
-                                  num <= MAX_DEPTH
+canJump(stack, tail, id_jump) :- (stack = [id_jump, tail]
                                   ;
-                                  stack = [STACK_OVERFLOW, tail],
-                                  validStack(stack)
+                                  stack = [STACK_OVERFLOW, tail]
                                   ;
                                   tail = stack,
-                                  stack = [STACK_OVERFLOW, tail_prev],
-                                  validStack(stack)),
+                                  stack = [STACK_OVERFLOW, tail_prev]),
+                                 validStack(stack),
                                  jump(id_jump, _, _, _).
 
 // Keep the argument taint across calls
