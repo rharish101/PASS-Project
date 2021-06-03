@@ -1,0 +1,147 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2cm]{geometry}
+\usepackage{minted}
+\usepackage[svgnames]{xcolor}
+
+\title{%
+    \vspace{-15mm}
+    Static Taint Analysis for Ethereum Contracts\\
+}
+\author{
+    Harish Rajagopal\\
+    20-946-349%
+    \and%
+    Sven Grübel\\
+    15-923-493%
+}
+\date{Spring 2021}
+
+% Custom LaTeX environment for displaying solidity code
+\newenvironment{code}{%
+    \VerbatimEnvironment%
+    % lexer.py is a Solidity lexer from: https://github.com/veox/pygments-lexer-solidity/
+    % This is needed since minted probably uses an older version of Pygments w/o Solidity support
+    \begin{minted}[bgcolor=GhostWhite, fontsize=\footnotesize]{lexer.py:SolidityLexer -x}%
+}{\end{minted}}
+
+% Shorthand for Solidity identifiers
+\newcommand{\solidity}[1]{\mintinline{lexer.py:SolidityLexer -x}{#1}}
+
+% Remove page numbers
+\pagenumbering{gobble}
+
+\begin{document}
+
+\maketitle
+
+In this project, we implement a static taint analyser for Ethereum smart contracts.
+Our analyser takes as input an Ethereum smart contract written in Solidity and finds if an untrusted address can be used as the argument of \solidity{selfdestruct} in this contract.
+
+\section{Guards and Good/Bad Blocks}
+Guards are defined as boolean values that explicitly depend on \solidity{msg.sender} and all other values it depends on are untainted.
+Statements that are not a guard are modelled by the \texttt{notGuard(id, blk, stack)} relation.
+The reason why \textit{not-guards} are tracked instead of \textit{guards} is that there would be a cyclic dependency with negation if \textit{guards} would be used directly, such that the Datalog relations can't be properly stratified.
+
+\textit{Good} blocks are defined as blocks where all incoming edges are protected by a guard.
+All other blocks are called \textit{bad} blocks.
+All \textit{bad} blocks are tracked by the analyser with the \texttt{argTaint(blk, stack)} relation.
+
+To determine if a statement depends on \solidity{msg.sender}, the analyser tracks all statements and global variables which don't depend on \solidity{msg.sender} (again to remove negation out of a cyclic dependency).
+
+\section{Local Variable Taint}
+There are three sources for taint of local variables: \solidity{msg.sender} (called \textit{sender-based taint}), user input and \solidity{msg.value} (called \textit{conditional taint}), and previously tainted global variables (called \textit{permanent taint}).
+\textit{Conditional taints} and \textit{sender-based taints} will be cleared after a guard condition, but \textit{permanent taint} persists even through guards.
+We track it using \texttt{taintedLocal(id, blk, src, stack)}, which depends on the current block, the taint source, and the current call stack.
+
+The reason for separating \textit{sender-based taints} from \textit{conditional taints} is that we want to identify taint sources other than \solidity{msg.sender} for \texttt{notGuard}.
+In all other cases, these two taint sources are treated the same.
+
+Consider the following contract which shows the difference between these two taints for local variables:
+
+\begin{code}
+contract Contract{
+  address owner;
+  int global_x;
+  function foo(int x) {
+    global_x = x;                 // global_x becomes permanently tainted after foo exits
+  }
+  function bar(int y) {
+    x = global_x;                 // At this point, y is conditionally tainted and x is permanently tainted
+    require(msg.sender == owner); // A guard is encountered
+    selfdestruct(y);              // At this point, y is not tainted any more, but x is still tainted
+  }
+}
+\end{code}
+Our analyser correctly outputs ``Safe''.
+
+\section{Global Variable Taint}
+Taints for global variables have two states: \textit{permanently tainted} (globals that can be tainted by an attacker), and \textit{temporarily tainted} (for taints within a contract execution).
+Since \textit{temporary taints} can change with every line, we pass around these taints between adjacent statements and blocks.
+We track \textit{permanent taints} using \texttt{permaTainted(field)}.
+\textit{Temporary taints} are tracked using \texttt{taintedGlobal(field, id, src, stack)}, which depends on the current statement, taint source (similar to local variable taints), and the current call stack.
+
+If a global variable is \textit{permanently tainted}, then a \textit{temporary taint} is applied onto it at the start of a contract execution, with the taint source set to \textit{permanent}.
+If a global variable has any \textit{temporary taint} when a contract execution ends, then a \textit{permanent taint} is applied onto that global.
+
+The following example illustrates this behaviour:
+\begin{code}
+contract Contract {
+  int y;
+  int z;
+  address owner;
+  function foo(int x) public {
+    z = x;                      // z becomes temporarily tainted by x
+  }                             // z becomes permanently tainted after foo exits
+  function bar() public {       // z gets a temporary taint when bar starts, since it's perma-tainted by foo
+    y = z;                      // y becomes temporarily tainted from z's temporary taint
+    y = 0;                      // y is cleaned of its taint
+    selfdestruct(address(y));   // safe, because y's taint no longer exists
+  }
+}
+\end{code}
+Our analyser correctly outputs ``Safe''.
+
+\section{Functions}
+To track function calls, call stacks are used.
+A call stack is essentially a list of jump transfer IDs.
+When a function is first called, the call stack is empty (i.e. \solidity{nil}).
+Whenever a function calls another function, the ID of the corresponding jump transfer is prepended to the call stack.
+
+To track and ground valid stacks, we have the helper relations \texttt{validStack(stack)}, \texttt{validIdStack(id, stack)} and \texttt{validBlkStack(blk, stack)}.
+The latter two check if \texttt{id} and \texttt{blk} are possible with \texttt{stack}.
+
+The inputs to a function can vary, and thus the call stack can identify which ``state'' the function's arguments (and global variables) are in.
+All local variables within a function get their relations, e.g. taints, either from function arguments or from global variables.
+Thus, almost all custom relations we define in Datalog depend on the call stack.
+
+For example, consider the following contract:
+\begin{code}
+    contract Contract {
+      address owner;
+      function check(address x) public returns(bool) {
+        // x will be tainted in call stacks [nil] and [bar->check, [nil]], but untainted in [foo->check, [nil]]
+        return (msg.sender == x);       // whether check returns a guard depends on x's taint
+      }
+      function foo() public {
+        require(check(owner));          // check is given an untainted value, so this is a guard
+        selfdestruct(msg.sender);       // safe
+      }
+      function bar(address z) public {
+        require(check(z));              // check is given a tainted value, so this is not a guard
+        selfdestruct(msg.sender);       // vulnerable
+      }
+    }
+\end{code}
+Our analyser correctly outputs ``Tainted''.
+
+In accordance with the precision requirements in the project description, only stacks with a maximum depth of 3 nested function calls are tracked.
+If a call were to further increase the stack size, a special \textit{stack overflow} token (\texttt{<so>}) is prepended to the call stack.
+Thus, all the jump transfers IDs after the first three IDs in such stacks will be replaced by just \texttt{<so>} --- thereby being merged into one.
+This way, the analyser is able to mark local variables and global variables as tainted in all executions with a certain stack prefix if there is at least one tainted assignment with the same stack prefix, since their call stacks would be identical (due to \texttt{<so>}).
+
+\section{Sinks}
+Finally, to find out if a contract is vulnerable, we use the relation \texttt{tainted\_sinks(id)}.
+This is set only if we have \solidity{selfdestruct(id, addr)} at this ID and \texttt{addr} is tainted, i.e. we have \texttt{taintedLocal(addr, blk, \_, \_)}, where \texttt{blk} contains \texttt{id}, for any taint source and call stack.
+
+\end{document}
