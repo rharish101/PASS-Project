@@ -95,7 +95,7 @@ contract,ground truth,your output,your runtime,your point
 94.sol,Tainted,Tainted,2.14,0
 95.sol,Safe,Safe,2.588,1
 96.sol,Safe,Safe,11.029,1
-97.sol,Tainted,timeout (Tainted),60,0
+97.sol,Safe,timeout (Tainted),60,0
 98.sol,Safe,Safe,1.495,1
 99.sol,Safe,Safe,1.901,1
 100.sol,Tainted,Tainted,1.896,0
